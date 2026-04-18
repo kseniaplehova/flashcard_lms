@@ -93,6 +93,6 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
-OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL', None)
-OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'mistralai/Mistral-7B-Instruct-v0.2')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'deepseek/deepseek-chat')
