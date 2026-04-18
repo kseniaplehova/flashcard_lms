@@ -1,7 +1,7 @@
 from .dashboard import DashboardView
 from .deck_views import DeckListView, DeckCreateView, DeckDetailView, DeckUpdateView, DeckDeleteView
 from .card_views import FlashcardCreateView, FlashcardBulkCreateView, FlashcardUpdateView, FlashcardDeleteView
-from .study_views import StudySessionView
+from .study_views import StudySessionView, StudyResultsView, RetryStrugglingView, RetryResultsView, RetryCompleteView
 
 __all__ = [
     'DashboardView',
@@ -15,4 +15,8 @@ __all__ = [
     'FlashcardUpdateView',
     'FlashcardDeleteView',
     'StudySessionView',
+    'StudyResultsView',
+    'RetryStrugglingView',
+    'RetryResultsView',
+    'RetryCompleteView',
 ]

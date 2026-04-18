@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Всё освоено! - {{ deck.name }}{% endblock %}
+
+{% block content %}
+<style>
+    .complete-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 3rem 1rem;
+        text-align: center;
+    }
+    .success-box {
+        background: white;
+        border-radius: 24px;
+        padding: 3rem 2rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    .success-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+    }
+    .success-box h2 {
+        color: #27ae60;
+        margin-bottom: 1rem;
+    }
+    .success-box p {
+        color: #666;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
+</style>
+
+<div class="complete-container">
+    <div class="success-box">
+        <div class="success-icon">🎉🏆🎉</div>
+        <h2>Поздравляем!</h2>
+        <p>Все проблемные карточки успешно освоены!</p>
+        <p>Вы отлично поработали! 👏</p>
+        
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-primary btn-large">
+                📊 Посмотреть результаты
+            </a>
+        </div>
+        <div style="margin-top: 1rem;">
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-secondary">
+                ← Вернуться к колоде
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

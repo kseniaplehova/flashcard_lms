@@ -22,7 +22,12 @@ urlpatterns = [
     path('cards/<int:pk>/delete/', views.FlashcardDeleteView.as_view(), name='card_delete'),
     
     # Study Session
+    # Study Session
     path('decks/<int:deck_pk>/study/', views.StudySessionView.as_view(), name='study_session'),
+    path('decks/<int:deck_pk>/study/results/', views.StudyResultsView.as_view(), name='study_results'),
+    path('decks/<int:deck_pk>/study/retry/', views.RetryStrugglingView.as_view(), name='retry_struggling'),
+    path('decks/<int:deck_pk>/study/retry/results/', views.RetryResultsView.as_view(), name='retry_results'),
+    path('decks/<int:deck_pk>/study/retry/complete/', views.RetryCompleteView.as_view(), name='retry_complete'),
     
     # API Endpoints
     path('api/cards/<int:card_pk>/review/', api_views.CardReviewAPIView.as_view(), name='api_card_review'),

@@ -25,26 +25,24 @@ class FlashcardCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         
         try:
             llm_service = LLMGeneratorService()
-            generated = llm_service.generate_card_content(
+            generated = llm_service.generate_example_sentence(
                 term=term,
-                target_lang=deck.target_language,
-                native_lang=deck.native_language
+                definition='',
+                part_of_speech='',
+                target_language=deck.target_language,
+                user=self.request.user,  # type: ignore[arg-type]
+                flashcard=None,
             )
             
-            if 'error' not in generated:
-                form.instance.definition = generated.get('translation', term)
-                form.instance.part_of_speech = generated.get('part_of_speech', '')
-                form.instance.example_sentence = generated.get('example', '')
-                messages.success(
-                    self.request, 
-                    f"✅ Карточка создана! Токенов: {generated.get('tokens_used', 0)}"
-                )
-            else:
-                form.instance.definition = term
-                messages.warning(self.request, f"⚠️ ИИ недоступен: {generated['error']}")
+            form.instance.definition = f"Перевод: {term}"
+            form.instance.example_sentence = generated.get('example', '')
+            messages.success(
+                self.request, 
+                f"✅ Карточка '{term}' создана!"
+            )
         except Exception as e:
             form.instance.definition = term
-            messages.error(self.request, f"❌ Ошибка: {str(e)}")
+            messages.error(self.request, f"❌ Ошибка генерации: {str(e)}")
         
         form.instance.deck = deck
         return super().form_valid(form)
@@ -66,14 +64,18 @@ class FlashcardBulkCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
         return deck.owner == self.request.user  # type: ignore[attr-defined]
     
-    def get(self, request, deck_pk: int):
+    def get(self, request: Any, deck_pk: int) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=deck_pk)
         return render(request, self.template_name, {'deck': deck})
     
-    def post(self, request, deck_pk: int):
+    def post(self, request: Any, deck_pk: int) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=deck_pk)
         topic = request.POST.get('topic', '').strip()
-        count = int(request.POST.get('count', 10))
+        
+        try:
+            count = int(request.POST.get('count', 10))
+        except ValueError:
+            count = 10
         
         if not topic:
             messages.error(request, "Введите тему для генерации")
@@ -92,26 +94,31 @@ class FlashcardBulkCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
             total_tokens = 0
             
             for card_data in cards_data:
-                if card_data.get('term') and card_data.get('translation'):
+                term = str(card_data.get('term', '')).strip()
+                translation = str(card_data.get('translation', '')).strip()
+                
+                print(f"DEBUG: term='{term}', translation='{translation}'")
+                
+                if term and translation:
                     Flashcard.objects.create(
                         deck=deck,
-                        term=card_data['term'],
-                        definition=card_data['translation'],
-                        part_of_speech=card_data.get('part_of_speech', ''),
-                        example_sentence=card_data.get('example', ''),
+                        term=term,
+                        definition=translation,
+                        part_of_speech=str(card_data.get('part_of_speech', '')),
+                        example_sentence=str(card_data.get('example', '')),
                         base_difficulty=3
                     )
                     created_count += 1
                     total_tokens += card_data.get('tokens_used', 0)
             
-            messages.success(
-                request,
-                f"✅ Создано {created_count} карточек по теме «{topic}»! "
-                f"Использовано токенов: {total_tokens}"
-            )
+            if created_count > 0:
+                messages.success(request, f"✅ Создано {created_count} карточек по теме «{topic}»!")
+            else:
+                messages.warning(request, f"⚠️ Не удалось создать карточки. Попробуйте другую тему.")
             
         except Exception as e:
             messages.error(request, f"❌ Ошибка генерации: {str(e)}")
+            print(f"DEBUG ERROR: {e}")
         
         return redirect('cards:deck_detail', pk=deck_pk)
 

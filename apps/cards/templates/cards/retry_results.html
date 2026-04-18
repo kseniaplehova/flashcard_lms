@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Результаты повторения - {{ deck.name }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Скопируйте стили из study_results.html или подключите тот же CSS */
+    .retry-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+    .message-box {
+        background: white;
+        border-radius: 24px;
+        padding: 3rem 2rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .message-box h2 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+    .progress-update {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+    .stats-mini {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    .stat-mini {
+        text-align: center;
+    }
+    .stat-mini .value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .stat-mini.mastered .value { color: #27ae60; }
+    .stat-mini.struggling .value { color: #e74c3c; }
+</style>
+
+<div class="retry-container">
+    <div class="message-box">
+        <h2>🔄 Круг повторения завершён!</h2>
+        
+        <div class="stats-mini">
+            <div class="stat-mini mastered">
+                <div class="value">{{ mastered_count }}</div>
+                <div class="label">✅ Освоено</div>
+            </div>
+            <div class="stat-mini struggling">
+                <div class="value">{{ struggling_count }}</div>
+                <div class="label">⚠️ Осталось</div>
+            </div>
+        </div>
+        
+        {% if struggling_cards %}
+            <p class="progress-update">Отличный прогресс! Осталось ещё немного.</p>
+            <a href="{% url 'cards:retry_struggling' deck.pk %}" class="btn btn-primary btn-large">
+                🔄 Продолжить повторение
+            </a>
+        {% else %}
+            <p class="progress-update">🎉 Поздравляем! Все карточки освоены!</p>
+            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-success btn-large">
+                ✅ Посмотреть финальные результаты
+            </a>
+        {% endif %}
+        
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-secondary">
+                ← Вернуться к колоде
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
