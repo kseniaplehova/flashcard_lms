@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Профиль пользователя</h2>
+    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email|default:"Не указан" }}</p>
+    <p><strong>Количество колод:</strong> {{ decks_count }}</p>
+    <a href="{% url 'cards:dashboard' %}" class="btn">Перейти к обучению</a>
+</div>
+{% endblock %}

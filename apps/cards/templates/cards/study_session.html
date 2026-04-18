@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Обучение - {{ deck.name }}{% endblock %}
+
+{% block content %}
+<div class="study-container" 
+     data-card-id="{{ card.pk }}"
+     data-total-cards="{{ total_due }}"
+     data-deck-id="{{ deck.pk }}">
+    
+    <h1>{{ deck.name }}</h1>
+    
+    {% if no_cards %}
+        <div style="text-align: center; padding: 3rem;">
+            <h2>🎉 Поздравляем!</h2>
+            <p>На сегодня нет карточек для повторения.</p>
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn">Вернуться к колоде</a>
+        </div>
+    {% else %}
+        <div class="progress-bar">
+            <div class="progress-text">
+                Карточка <span id="current-card-num">1</span> из <span id="total-cards">{{ total_due }}</span>
+            </div>
+            <div class="progress">
+                <div class="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <div class="flashcard" id="flashcard">
+            <div class="flashcard-inner">
+                <div class="flashcard-front">
+                    <h2 id="card-term">{{ card.term }}</h2>
+                    {% if card.part_of_speech %}
+                    <p class="part-of-speech">{{ card.part_of_speech }}</p>
+                    {% endif %}
+                    <button class="btn btn-flip" onclick="flipCard()">Показать ответ</button>
+                </div>
+                <div class="flashcard-back" style="display: none;">
+                    <h3>Определение:</h3>
+                    <p id="card-definition">{{ card.definition }}</p>
+                    
+                    <h3>Пример:</h3>
+                    <p id="card-example">{{ card.example_sentence|default:"" }}</p>
+                    
+                    <div class="rating-buttons">
+                        <p>Насколько хорошо вы знаете эту карточку?</p>
+                        <div class="rating-grid">
+                            <button class="rating-btn rating-0" onclick="submitAnswer(0)">Совсем не знаю</button>
+                            <button class="rating-btn rating-1" onclick="submitAnswer(1)">Почти не знаю</button>
+                            <button class="rating-btn rating-2" onclick="submitAnswer(2)">С трудом</button>
+                            <button class="rating-btn rating-3" onclick="submitAnswer(3)">Нормально</button>
+                            <button class="rating-btn rating-4" onclick="submitAnswer(4)">Хорошо</button>
+                            <button class="rating-btn rating-5" onclick="submitAnswer(5)">Отлично</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ai-generate-section" style="margin-top: 2rem; text-align: center;">
+            <button class="btn" onclick="generateContext()" id="generate-btn">
+            </button>
+            <div id="generate-result" style="margin-top: 1rem;"></div>
+        </div>
+        
+        <form id="csrf-form" style="display: none;">{% csrf_token %}</form>
+    {% endif %}
+</div>
+
+<style>
+    /* ... стили остаются те же ... */
+</style>
+
+<script src="{% static 'cards/js/study_session.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.querySelector('.study-container');
+        initStudySession({
+            cardId: parseInt(container.dataset.cardId),
+            totalCards: parseInt(container.dataset.totalCards),
+            deckId: parseInt(container.dataset.deckId),
+            currentCardNum: 1
+        });
+    });
+</script>
+{% endblock %}

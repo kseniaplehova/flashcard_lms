@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Дашборд{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Добро пожаловать, {{ user.username }}!</h1>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 2rem 0;">
+        <div style="background: #3498db; color: white; padding: 1.5rem; border-radius: 8px;">
+            <h3>Всего колод</h3>
+            <p style="font-size: 2rem;">{{ decks|length }}</p>
+        </div>
+        <div style="background: #27ae60; color: white; padding: 1.5rem; border-radius: 8px;">
+            <h3>Всего карточек</h3>
+            <p style="font-size: 2rem;">{{ total_cards }}</p>
+        </div>
+        <div style="background: #f39c12; color: white; padding: 1.5rem; border-radius: 8px;">
+            <h3>Изучено</h3>
+            <p style="font-size: 2rem;">{{ mastered_total }}</p>
+        </div>
+        <div style="background: #9b59b6; color: white; padding: 1.5rem; border-radius: 8px;">
+            <h3>В процессе</h3>
+            <p style="font-size: 2rem;">{{ learning_total }}</p>
+        </div>
+    </div>
+    
+    <h2>Последние колоды</h2>
+    {% if recent_decks %}
+        <ul style="list-style: none;">
+            {% for deck in recent_decks %}
+            <li style="padding: 1rem; border-bottom: 1px solid #eee;">
+                <a href="{% url 'cards:deck_detail' deck.pk %}" style="font-size: 1.2rem; text-decoration: none; color: #3498db;">
+                    {{ deck.name }}
+                </a>
+                <p style="color: #666; margin-top: 0.5rem;">{{ deck.description|truncatewords:20 }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'cards:deck_list' %}" class="btn">Все колоды</a>
+        <a href="{% url 'cards:deck_create' %}" class="btn btn-success">Создать новую колоду</a>
+    {% else %}
+        <p>У вас пока нет колод.</p>
+        <a href="{% url 'cards:deck_create' %}" class="btn btn-success">Создать первую колоду</a>
+    {% endif %}
+</div>
+{% endblock %}

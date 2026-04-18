@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление карточки{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Удалить карточку "{{ flashcard.term }}"?</h2>
+    <p>Это действие нельзя отменить.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Да, удалить</button>
+        <a href="{% url 'cards:deck_detail' flashcard.deck.pk %}" class="btn">Отмена</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ deck.name }}{% endblock %}
+
+{% block content %}
+<div class="deck-container">
+    <h1>{{ deck.name }}</h1>
+    <p>{{ deck.description }}</p>
+    
+    <div style="margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">🎯 Начать обучение</a>
+        <a href="{% url 'cards:card_create' deck.pk %}" class="btn">📝 Добавить карточку</a>
+        <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn" style="background: #9b59b6; color: white;">
+            🤖 Сгенерировать по теме
+        </a>
+        <a href="{% url 'cards:deck_update' deck.pk %}" class="btn">✏️ Редактировать колоду</a>
+    </div>
+    
+    <h2>Карточки ({{ flashcards|length }})</h2>
+    {% if flashcards %}
+        <div style="display: grid; gap: 1rem;">
+            {% for card in flashcards %}
+            <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3>{{ card.term }}</h3>
+                <p><strong>Определение:</strong> {{ card.definition }}</p>
+                {% if card.example_sentence %}
+                <p><strong>Пример:</strong> {{ card.example_sentence }}</p>
+                {% endif %}
+                <div style="margin-top: 0.5rem;">
+                    <a href="{% url 'cards:card_update' card.pk %}" class="btn">Редактировать</a>
+                    <a href="{% url 'cards:card_delete' card.pk %}" class="btn btn-danger">Удалить</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>В этой колоде пока нет карточек.</p>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <a href="{% url 'cards:card_create' deck.pk %}" class="btn">Добавить первую карточку</a>
+            <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn" style="background: #9b59b6; color: white;">
+                🤖 Сгенерировать по теме
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

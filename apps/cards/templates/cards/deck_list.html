@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои колоды{% endblock %}
+
+{% block content %}
+<div class="deck-container">
+    <h1>Мои колоды</h1>
+    <a href="{% url 'cards:deck_create' %}" class="btn btn-success" style="margin-bottom: 1rem;">Создать новую колоду</a>
+    
+    {% if decks %}
+        <div style="display: grid; gap: 1rem;">
+            {% for deck in decks %}
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3>
+                    <a href="{% url 'cards:deck_detail' deck.pk %}" style="text-decoration: none; color: #2c3e50;">
+                        {{ deck.name }}
+                    </a>
+                </h3>
+                <p>{{ deck.description|default:"Нет описания" }}</p>
+                <p><small>Язык: {{ deck.target_language }} | Карточек: {{ deck.flashcard_set.count }}</small></p>
+                <div style="margin-top: 1rem;">
+                    <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn">Просмотр</a>
+                    <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">Учить</a>
+                    <a href="{% url 'cards:deck_update' deck.pk %}" class="btn">Редактировать</a>
+                    <a href="{% url 'cards:deck_delete' deck.pk %}" class="btn btn-danger">Удалить</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>У вас пока нет колод. Создайте первую!</p>
+    {% endif %}
+</div>
+{% endblock %}

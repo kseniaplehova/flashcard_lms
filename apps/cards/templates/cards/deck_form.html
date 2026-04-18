@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if deck %}Редактирование{% else %}Создание{% endif %} колоды
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>{% if deck %}Редактировать{% else %}Создать{% endif %} колоду</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a href="{% url 'cards:deck_list' %}" class="btn">Отмена</a>
+    </form>
+</div>
+{% endblock %}
