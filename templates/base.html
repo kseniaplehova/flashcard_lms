@@ -33,6 +33,14 @@
         nav a:hover {
             text-decoration: underline;
         }
+        nav a[href*="admin_dashboard"] {
+            font-weight: 500;
+            color: #f1c40f;
+        }
+        nav a[href*="admin_dashboard"]:hover {
+            color: #f39c12;
+            text-decoration: none;
+        }
         nav form {
             display: inline;
             margin-left: auto;
@@ -106,25 +114,30 @@
             color: #721c24;
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav>
-        <div class="container">
-            <a href="{% url 'cards:dashboard' %}">Главная</a>
-            <a href="{% url 'cards:deck_list' %}">Мои колоды</a>
-            {% if user.is_authenticated %}
-                <span>Привет, {{ user.username }}!</span>
-                <a href="{% url 'accounts:profile' %}">Профиль</a>
-                <form method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button type="submit">Выйти</button>
-                </form>
-            {% else %}
-                <a href="{% url 'accounts:login' %}">Войти</a>
-                <a href="{% url 'accounts:register' %}">Регистрация</a>
-            {% endif %}
-        </div>
-    </nav>
+    <div class="container">
+        <a href="{% url 'cards:dashboard' %}">Главная</a>
+        <a href="{% url 'cards:deck_list' %}">Мои колоды</a>
+        
+        {% if user.is_staff %}
+            <a href="{% url 'accounts:admin_dashboard' %}">📊 Админ-панель</a>
+        {% endif %}
+        
+        {% if user.is_authenticated %}
+            <span>👤 {{ user.username }}</span>
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit">Выйти</button>
+            </form>
+        {% else %}
+            <a href="{% url 'accounts:login' %}">Войти</a>
+            <a href="{% url 'accounts:register' %}">Регистрация</a>
+        {% endif %}
+    </div>
+</nav>
     
     <main>
         <div class="container">
@@ -139,5 +152,7 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

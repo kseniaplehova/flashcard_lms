@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Админ-панель{% endblock %}
+
+{% block content %}
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+    
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .admin-header h1 {
+        color: #2c3e50;
+        font-size: 2rem;
+    }
+    
+    .admin-badge {
+        background: #e67e22;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.8rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .stat-trend {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #27ae60;
+    }
+    
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .chart-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .chart-title {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .bar-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        height: 200px;
+        padding: 1rem 0;
+    }
+    
+    .bar-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+    }
+    
+    .bar {
+        width: 100%;
+        background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 8px 8px 0 0;
+        min-height: 4px;
+        transition: height 0.3s;
+        height: 4px;
+    }
+    
+    .bar-label {
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .bar-value {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .activity-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .activity-table th {
+        text-align: left;
+        padding: 0.75rem;
+        color: #666;
+        font-weight: 500;
+        border-bottom: 2px solid #ecf0f1;
+    }
+    
+    .activity-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #ecf0f1;
+    }
+    
+    .user-list {
+        list-style: none;
+    }
+    
+    .user-list li {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #ecf0f1;
+    }
+    
+    .badge {
+        background: #4facfe;
+        color: white;
+        padding: 0.2rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    
+    .empty-message {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+    
+    @media (max-width: 1000px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .charts-row {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 600px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>👑 Административная панель</h1>
+        <span class="admin-badge">{{ user.username }}</span>
+    </div>
+    
+    <!-- Основные метрики -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value">{{ total_users|default:0 }}</div>
+            <div class="stat-label">Всего пользователей</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value">{{ active_today|default:0 }}</div>
+            <div class="stat-label">Активных сегодня</div>
+            <div class="stat-trend">↗️ {{ active_week|default:0 }} за неделю</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-value">{{ total_decks|default:0 }}</div>
+            <div class="stat-label">Всего колод</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🌍</div>
+            <div class="stat-value">{{ public_decks|default:0 }}</div>
+            <div class="stat-label">Публичных колод</div>
+        </div>
+    </div>
+    
+    <!-- Графики -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">📊 Активность за последние 7 дней</div>
+            {% if daily_stats %}
+            <div class="bar-chart">
+                {% for day in daily_stats %}
+                <div class="bar-container">
+                    <div class="bar" data-height="{{ day.count }}"></div>
+                    <div class="bar-label">{{ day.date }}</div>
+                    <div class="bar-value">{{ day.count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-message">Нет данных за последние 7 дней</div>
+            {% endif %}
+        </div>
+        
+        <div class="chart-card">
+            <div class="chart-title">🏆 Топ активных пользователей (30 дней)</div>
+            {% if top_users %}
+            <ul class="user-list">
+                {% for user_stat in top_users %}
+                <li>
+                    <span>{{ user_stat.user__username }}</span>
+                    <span class="badge">{{ user_stat.activity_count }} действий</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-message">Нет данных</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Последние действия и популярные колоды -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">🕐 Последние действия</div>
+            {% if recent_activities %}
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Действие</th>
+                        <th>Время</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activities %}
+                    <tr>
+                        <td>{{ activity.user.username }}</td>
+                        <td>
+                            {% if activity.action == 'login' %}🔑 Вход
+                            {% elif activity.action == 'logout' %}🚪 Выход
+                            {% elif activity.action == 'study_start' %}📚 Начало обучения
+                            {% elif activity.action == 'study_complete' %}✅ Завершение
+                            {% elif activity.action == 'deck_create' %}📁 Создание колоды
+                            {% elif activity.action == 'card_create' %}🎴 Создание карточки
+                            {% else %}{{ activity.action }}
+                            {% endif %}
+                        </td>
+                        <td>{{ activity.created_at|time:"H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-message">Нет действий</div>
+            {% endif %}
+        </div>
+        
+        <div class="chart-card">
+            <div class="chart-title">🔥 Популярные колоды</div>
+            {% if popular_decks %}
+            <ul class="user-list">
+                {% for deck in popular_decks %}
+                <li>
+                    <span>
+                        {{ deck.name }}
+                        <small style="color: #999;">({{ deck.owner.username }})</small>
+                    </span>
+                    <span class="badge">{{ deck.study_count }} обучений</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-message">Нет данных</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'accounts/js/admin_dashboard.js' %}"></script>
+{% endblock %}

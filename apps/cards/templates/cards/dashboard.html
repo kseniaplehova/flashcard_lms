@@ -290,28 +290,27 @@
     <!-- Приветствие -->
     <div class="welcome-header">
         <h1>👋 Привет, {{ user.username }}!</h1>
-        <p>Продолжай учиться и достигай новых высот! 🚀</p>
     </div>
     
     <!-- Общая статистика -->
     <div class="stats-grid">
         <div class="stat-card decks">
-            <div class="stat-icon">📚</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ decks|length }}</div>
             <div class="stat-label">Колод</div>
         </div>
         <div class="stat-card cards">
-            <div class="stat-icon">🎴</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ total_cards }}</div>
             <div class="stat-label">Карточек</div>
         </div>
         <div class="stat-card mastered">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ mastered_total }}</div>
             <div class="stat-label">Освоено</div>
         </div>
         <div class="stat-card learning">
-            <div class="stat-icon">📖</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ learning_total }}</div>
             <div class="stat-label">В процессе</div>
         </div>

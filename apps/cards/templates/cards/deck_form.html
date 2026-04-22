@@ -5,14 +5,330 @@
 {% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>{% if deck %}Редактировать{% else %}Создать{% endif %} колоду</h2>
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
     
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-success">Сохранить</button>
-        <a href="{% url 'cards:deck_list' %}" class="btn">Отмена</a>
-    </form>
+    .form-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    
+    .form-card h2 {
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        text-align: center;
+        font-size: 1.8rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.9rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #4facfe;
+    }
+    
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 0.3rem;
+    }
+    
+    /* Радио-кнопки для видимости */
+    .visibility-group {
+        margin: 1.5rem 0;
+    }
+    
+    .visibility-group label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.8rem;
+    }
+    
+    .radio-options {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .radio-option {
+        flex: 1;
+        cursor: pointer;
+    }
+    
+    .radio-option input[type="radio"] {
+        display: none;
+    }
+    
+    .radio-option-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.2rem;
+        border: 2px solid #e9ecef;
+        border-radius: 16px;
+        transition: all 0.2s;
+        text-align: center;
+    }
+    
+    .radio-option input[type="radio"]:checked + .radio-option-content {
+        border-color: #4facfe;
+        background: #f0f9ff;
+    }
+    
+    .radio-option.public input[type="radio"]:checked + .radio-option-content {
+        border-color: #27ae60;
+        background: #d5f5e3;
+    }
+    
+    .radio-option.private input[type="radio"]:checked + .radio-option-content {
+        border-color: #95a5a6;
+        background: #f0f0f0;
+    }
+    
+    .radio-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .radio-title {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .radio-desc {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .btn {
+        flex: 1;
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: #4facfe;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #3a8fd8;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #7f8c8d;
+        transform: translateY(-2px);
+    }
+    
+    .admin-note {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: #fef9e7;
+        border-radius: 12px;
+        color: #e67e22;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0;
+        color: #e74c3c;
+        font-size: 0.85rem;
+    }
+    
+    @media (max-width: 500px) {
+        .form-card {
+            padding: 1.5rem;
+        }
+        
+        .radio-options {
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <div class="form-card">
+        <h2>
+            {% if deck %}
+                ✏️ Редактировать колоду
+            {% else %}
+                🎯 Создать новую колоду
+            {% endif %}
+        </h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Название -->
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">📛 Название колоды</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.name.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <div class="help-text">Например: "Английские слова", "Испанский для путешествий"</div>
+            </div>
+            
+            <!-- Описание -->
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">📝 Описание (необязательно)</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.description.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <div class="help-text">Кратко опишите, что в этой колоде</div>
+            </div>
+            
+            <!-- Языки -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="{{ form.target_language.id_for_label }}">🎯 Язык изучения</label>
+                    {{ form.target_language }}
+                    {% if form.target_language.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.target_language.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="help-text">Например: en, es, fr</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.native_language.id_for_label }}">🏠 Родной язык</label>
+                    {{ form.native_language }}
+                    {% if form.native_language.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.native_language.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="help-text">Например: ru, uk, by</div>
+                </div>
+            </div>
+            
+            <!-- Видимость (только для администратора) -->
+            {% if user.is_staff %}
+                <div class="visibility-group">
+                    <label>👁️ Видимость колоды</label>
+                    <div class="radio-options">
+                        <label class="radio-option private">
+                            <input type="radio" name="visibility" value="private" 
+                                   {% if not deck or deck.visibility == 'private' %}checked{% endif %}>
+                            <div class="radio-option-content">
+                                <span class="radio-icon">🔒</span>
+                                <span class="radio-title">Приватная</span>
+                                <span class="radio-desc">Только вы</span>
+                            </div>
+                        </label>
+                        <label class="radio-option public">
+                            <input type="radio" name="visibility" value="public"
+                                   {% if deck and deck.visibility == 'public' %}checked{% endif %}>
+                            <div class="radio-option-content">
+                                <span class="radio-icon">🌍</span>
+                                <span class="radio-title">Публичная</span>
+                                <span class="radio-desc">Видна всем</span>
+                            </div>
+                        </label>
+                    </div>
+                    {% if form.visibility.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.visibility.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% else %}
+                <!-- Скрытое поле для обычных пользователей (всегда private) -->
+                <input type="hidden" name="visibility" value="private">
+            {% endif %}
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if deck %}Сохранить изменения{% else %}Создать колоду{% endif %}
+                </button>
+                <a href="{% url 'cards:deck_list' %}" class="btn btn-secondary">
+                    Отмена
+                </a>
+            </div>
+        </form>
+        
+        {% if user.is_staff %}
+            <div class="admin-note">
+                Вы администратор — можете создавать публичные колоды, которые будут видны всем пользователям.
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

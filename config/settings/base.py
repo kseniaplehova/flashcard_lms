@@ -6,10 +6,15 @@ from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 
-# Загрузка переменных окружения из .env файла
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# ❌ УБЕРИТЕ ЭТИ ДВЕ СТРОКИ:
+# ALLOWED_HOSTS = ['kseniaplehova.pythonanywhere.com', 'localhost', '127.0.0.1']
+# DEBUG = True
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this')
 
@@ -34,6 +39,7 @@ MIDDLEWARE: List[str] = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.accounts.middleware.UserActivityMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'

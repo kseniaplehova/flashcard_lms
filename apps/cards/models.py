@@ -10,6 +10,10 @@ class Deck(models.Model):
     Логическая группа флеш-карт.
     Поддерживает категоризацию контента и изоляцию статистики.
     """
+    VISIBILITY_CHOICES = [
+        ('private', 'Приватная'),
+        ('public', 'Публичная'),
+    ]
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True, default='')
     owner = models.ForeignKey(
@@ -17,6 +21,20 @@ class Deck(models.Model):
         on_delete=models.CASCADE,
         related_name='decks'
     )
+    visibility = models.CharField(
+        max_length=10,
+        choices=VISIBILITY_CHOICES,
+        default='private',
+        db_index=True,
+        help_text='Кто может видеть эту колоду'
+    ) 
+    
+    is_public = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text='Публичная колода видна всем пользователям'
+    )
+
     target_language = models.CharField(
         max_length=50,
         default='en',
