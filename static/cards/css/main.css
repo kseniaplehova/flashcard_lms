@@ -1,0 +1,269 @@
+/* ============================================================
+   FLASHCARD LMS — ОБЩИЕ СТИЛИ
+   ============================================================ */
+
+/* ---------- СБРОС ---------- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f5f7fa;
+    min-height: 100vh;
+}
+
+a { color: #3498db; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- НАВИГАЦИЯ ---------- */
+nav {
+    background: #2c3e50;
+    color: white;
+    padding: 0.8rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+nav .container { display: flex; gap: 1.5rem; align-items: center; }
+nav a { color: #ecf0f1; text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+nav a:hover { color: #fff; text-decoration: none; }
+nav a[href*="admin_dashboard"] { color: #f1c40f; font-weight: 600; }
+nav span { color: #bdc3c7; font-size: 0.9rem; }
+nav form { display: inline; margin-left: auto; }
+nav button { background: #e74c3c; color: white; border: none; padding: 0.4rem 0.9rem; cursor: pointer; border-radius: 6px; font-size: 0.85rem; }
+nav button:hover { background: #c0392b; }
+
+/* ---------- КОНТЕЙНЕР ---------- */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+main { padding: 2rem 0; min-height: calc(100vh - 60px); }
+
+/* ---------- ТИПОГРАФИКА ---------- */
+h1 { color: #2c3e50; font-size: 2rem; margin-bottom: 1rem; }
+h2 { color: #2c3e50; font-size: 1.5rem; margin-bottom: 0.8rem; }
+h3 { color: #2c3e50; font-size: 1.2rem; margin-bottom: 0.6rem; }
+
+/* ---------- КНОПКИ ---------- */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.65rem 1.3rem; border: none; border-radius: 10px; cursor: pointer;
+    font-size: 0.95rem; font-weight: 500; transition: all 0.2s;
+    text-decoration: none; white-space: nowrap; color: white; background: #95a5a6;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-decoration: none; color: white; }
+.btn-primary { background: #4facfe; }
+.btn-primary:hover { background: #3a8fd8; }
+.btn-success { background: #2ed573; }
+.btn-success:hover { background: #26b561; }
+.btn-danger { background: #ff6b6b; }
+.btn-danger:hover { background: #ee5253; }
+.btn-ai { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.btn-ai:hover { background: linear-gradient(135deg, #5a6fd6 0%, #6a4196 100%); }
+.btn-outline { background: transparent; border: 1.5px solid #ddd; color: #555; }
+.btn-outline:hover { background: #f5f5f5; color: #333; }
+.btn-large { padding: 0.9rem 2rem; font-size: 1.05rem; }
+
+/* ---------- КАРТОЧКИ ---------- */
+.card {
+    background: white; border-radius: 16px; padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+
+/* ---------- ФОРМЫ ---------- */
+.form-group { margin-bottom: 1.2rem; }
+.form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; color: #2c3e50; font-size: 0.95rem; }
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 0.8rem 1rem; border: 2px solid #e9ecef;
+    border-radius: 10px; font-size: 1rem; transition: border-color 0.2s; font-family: inherit;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #4facfe; }
+.help-text { font-size: 0.8rem; color: #888; margin-top: 0.3rem; }
+.errorlist { list-style: none; padding: 0; margin: 0.5rem 0 0; color: #e74c3c; font-size: 0.85rem; }
+
+/* ---------- БЕЙДЖИ ---------- */
+.badge {
+    display: inline-block; padding: 0.25rem 0.7rem; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge-success { background: #d5f5e3; color: #27ae60; }
+.badge-warning { background: #fef9e7; color: #e67e22; }
+.badge-danger { background: #fadbd8; color: #e74c3c; }
+.badge-info { background: #e3f2fd; color: #3498db; }
+.badge-muted { background: #f0f0f0; color: #7f8c8d; }
+
+/* ---------- ПРОГРЕСС-БАР ---------- */
+.progress-bar { height: 8px; background: #ecf0f1; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px; transition: width 0.3s ease; }
+
+/* ---------- СООБЩЕНИЯ ---------- */
+.messages { list-style: none; margin-bottom: 1.5rem; }
+.messages li { padding: 1rem 1.2rem; border-radius: 10px; margin-bottom: 0.5rem; font-weight: 500; }
+.messages .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.messages .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.messages .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+.messages .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+/* ---------- СТАТИСТИКА ---------- */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+.stat-card {
+    background: white; border-radius: 20px; padding: 1.8rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.12); }
+.stat-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+.stat-value { font-size: 2.5rem; font-weight: 700; color: #2c3e50; }
+.stat-label { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+
+/* ---------- СЕТКА КАРТОЧЕК ---------- */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.card-item {
+    background: white; border-radius: 16px; padding: 1.3rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06); border-left: 4px solid #4facfe; transition: transform 0.2s;
+}
+.card-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.card-term { font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.3rem; }
+.card-definition { color: #555; font-size: 1rem; margin-bottom: 0.5rem; }
+.card-example { color: #888; font-size: 0.9rem; font-style: italic; padding: 0.5rem; background: #f8f9fa; border-radius: 8px; }
+
+/* ---------- ПУСТОЕ СОСТОЯНИЕ ---------- */
+.empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+.empty-state-icon { font-size: 4rem; margin-bottom: 1.5rem; }
+.empty-state h3 { margin-bottom: 1rem; font-size: 1.5rem; }
+.empty-state p { color: #666; margin-bottom: 2rem; }
+
+/* ---------- УТИЛИТЫ ---------- */
+.text-center { text-align: center; }
+.text-muted { color: #888; }
+.mt-1 { margin-top: 0.5rem; } .mt-2 { margin-top: 1rem; } .mt-3 { margin-top: 1.5rem; }
+.mb-1 { margin-bottom: 0.5rem; } .mb-2 { margin-bottom: 1rem; } .mb-3 { margin-bottom: 1.5rem; }
+.flex-gap { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; }
+
+/* ---------- АДАПТИВНОСТЬ ---------- */
+@media (max-width: 768px) {
+    nav .container { flex-wrap: wrap; gap: 0.8rem; font-size: 0.85rem; }
+    h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; }
+    .container { padding: 0 1rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .cards-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; }
+}
+
+/* ========== МОБИЛЬНАЯ АДАПТАЦИЯ ========== */
+@media (max-width: 768px) {
+    /* Навигация */
+    nav .container {
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        justify-content: center;
+        padding: 0.5rem;
+    }
+    nav a, nav span {
+        font-size: 0.8rem;
+    }
+    nav button {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    /* Типографика */
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 1rem; }
+    
+    /* Контейнер */
+    .container { padding: 0 0.8rem; }
+    main { padding: 1rem 0; }
+    
+    /* Кнопки */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+    }
+    .btn-large {
+        padding: 0.7rem 1.5rem;
+        font-size: 0.95rem;
+    }
+    
+    /* Сетки */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Карточки */
+    .card {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    .card-item {
+        padding: 1rem;
+    }
+    .card-term {
+        font-size: 1.2rem;
+    }
+    
+    /* Статистика */
+    .stat-card {
+        padding: 1.2rem 1rem;
+    }
+    .stat-value {
+        font-size: 1.8rem;
+    }
+    .stat-icon {
+        font-size: 1.8rem;
+    }
+    
+    /* Формы */
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Сообщения */
+    .messages li {
+        padding: 0.7rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Еще мельче */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    nav .container {
+        flex-direction: column;
+        gap: 0.4rem;
+        text-align: center;
+    }
+    nav form {
+        margin-left: 0;
+    }
+    
+    h1 { font-size: 1.2rem; }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .flex-gap {
+        flex-direction: column;
+    }
+    .flex-between {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

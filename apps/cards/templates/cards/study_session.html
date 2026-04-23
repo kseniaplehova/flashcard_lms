@@ -5,332 +5,135 @@
 
 {% block content %}
 <style>
-    /* ВСТРОЕННЫЕ СТИЛИ ДЛЯ УЧЕБНОЙ СЕССИИ */
-    .study-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 1.5rem 1rem;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .study-container h1 {
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
-        text-align: center;
-        font-size: 2rem;
-    }
+    .study-container { max-width: 800px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .study-container h1 { text-align: center; }
+    .stats-bar { display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.2rem; background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); border-radius: 16px; margin-bottom: 1.5rem; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .stats-bar span { background: white; padding: 0.4rem 1rem; border-radius: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .progress-info { display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: #666; font-weight: 500; }
+    .message { text-align: center; padding: 3rem 2rem; background: white; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+    .message h2 { font-size: 1.8rem; }
+    .exercise-container { background: white; border-radius: 24px; padding: 2.5rem 2rem; margin: 1.5rem 0; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+    .exercise-container h2 { color: #666; font-size: 1.1rem; text-align: center; margin-bottom: 1rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+    .term-display { font-size: 3.5rem; font-weight: 700; color: #2c3e50; margin: 1.5rem 0; text-align: center; line-height: 1.2; }
+    .sentence-display { font-size: 1.6rem; color: #2c3e50; margin: 1.5rem 0; padding: 1.5rem; background: #f8f9fa; border-radius: 12px; text-align: center; line-height: 1.5; }
+    .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+    .option-btn { padding: 1.2rem 1rem; font-size: 1.1rem; border: 2px solid #e9ecef; border-radius: 16px; background: white; cursor: pointer; transition: all 0.2s; font-weight: 500; color: #2c3e50; text-align: center; width: 100%; }
+    .option-btn:hover { background: #f8f9fa; border-color: #4facfe; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(79, 172, 254, 0.2); }
+    .option-btn.correct { background: #2ed573; color: white; border-color: #2ed573; }
+    .option-btn.wrong { background: #ff6b6b; color: white; border-color: #ff6b6b; }
+    .option-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    #answer-input { width: 100%; padding: 1.2rem; font-size: 1.2rem; border: 2px solid #e9ecef; border-radius: 16px; margin: 1.5rem 0; box-sizing: border-box; transition: border-color 0.2s; }
+    #answer-input:focus { outline: none; border-color: #4facfe; }
+    .feedback { padding: 1.2rem; border-radius: 16px; margin-top: 1.5rem; text-align: center; font-size: 1.1rem; font-weight: 500; }
+    .feedback.correct { background: #d4edda; color: #155724; }
+    .feedback.wrong { background: #f8d7da; color: #721c24; }
+    .next-card-section { margin-top: 1.5rem; text-align: center; }
+    @media (max-width: 600px) { .options { grid-template-columns: 1fr; } .term-display { font-size: 2.5rem; } .exercise-container { padding: 1.5rem; } }
+    @media (max-width: 600px) {
+    .study-container { padding: 0.8rem; }
+    .study-container h1 { font-size: 1.3rem; }
+    
     .stats-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        padding: 1rem 1.2rem;
-        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-        border-radius: 16px;
-        margin-bottom: 1.5rem;
-        font-size: 0.9rem;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.8rem;
+        font-size: 0.8rem;
     }
     .stats-bar span {
-        background: white;
-        padding: 0.4rem 1rem;
-        border-radius: 30px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
     }
-    .progress-info {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-        color: #666;
-        font-weight: 500;
-    }
-    .progress-bar {
-        height: 10px;
-        background: #e9ecef;
-        border-radius: 5px;
-        margin-bottom: 2rem;
-        overflow: hidden;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        border-radius: 5px;
-        transition: width 0.3s ease;
-    }
-    .message {
-        text-align: center;
-        padding: 3rem 2rem;
-        background: white;
-        border-radius: 24px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-    }
-    .message h2 {
-        color: #2c3e50;
-        margin-bottom: 1rem;
-        font-size: 1.8rem;
-    }
-    .message p {
-        color: #666;
-        margin-bottom: 2rem;
-        font-size: 1.1rem;
-    }
+    
     .exercise-container {
-        background: white;
-        border-radius: 24px;
-        padding: 2.5rem 2rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-    }
-    .exercise-container h2 {
-        color: #666;
-        font-size: 1.1rem;
-        text-align: center;
-        margin-bottom: 1rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        padding: 1.2rem;
+        border-radius: 16px;
     }
     .term-display {
-        font-size: 3.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin: 1.5rem 0;
-        text-align: center;
-        line-height: 1.2;
+        font-size: 2.2rem;
+        margin: 1rem 0;
     }
     .sentence-display {
-        font-size: 1.6rem;
-        color: #2c3e50;
-        margin: 1.5rem 0;
-        padding: 1.5rem;
-        background: #f8f9fa;
-        border-radius: 12px;
-        text-align: center;
-        line-height: 1.5;
+        font-size: 1.1rem;
+        padding: 1rem;
     }
+    
     .options {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-top: 2rem;
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
     }
     .option-btn {
-        padding: 1.2rem 1rem;
-        font-size: 1.1rem;
-        border: 2px solid #e9ecef;
-        border-radius: 16px;
-        background: white;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-weight: 500;
-        color: #2c3e50;
-        text-align: center;
-        width: 100%;
-    }
-    .option-btn:hover {
-        background: #f8f9fa;
-        border-color: #4facfe;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.2);
-    }
-    .option-btn.correct {
-        background: #2ed573;
-        color: white;
-        border-color: #2ed573;
-    }
-    .option-btn.wrong {
-        background: #ff6b6b;
-        color: white;
-        border-color: #ff6b6b;
-    }
-    .option-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-    }
-    #answer-input {
-        width: 100%;
-        padding: 1.2rem;
-        font-size: 1.2rem;
-        border: 2px solid #e9ecef;
-        border-radius: 16px;
-        margin: 1.5rem 0;
-        box-sizing: border-box;
-        transition: border-color 0.2s;
-    }
-    #answer-input:focus {
-        outline: none;
-        border-color: #4facfe;
-    }
-    .btn {
-        display: inline-block;
-        padding: 0.9rem 2rem;
-        border: none;
+        padding: 0.9rem;
+        font-size: 0.95rem;
         border-radius: 12px;
-        cursor: pointer;
+    }
+    
+    #answer-input {
+        padding: 0.9rem;
         font-size: 1rem;
-        font-weight: 600;
-        transition: all 0.2s;
-        text-decoration: none;
-        background: #4facfe;
-        color: white;
-        text-align: center;
     }
-    .btn:hover {
-        background: #3a8fd8;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
-    }
-    .btn-success {
-        background: #2ed573;
-    }
-    .btn-success:hover {
-        background: #26b561;
-    }
+    
     .feedback {
-        padding: 1.2rem;
-        border-radius: 16px;
-        margin-top: 1.5rem;
-        text-align: center;
-        font-size: 1.1rem;
-        font-weight: 500;
+        padding: 0.8rem;
+        font-size: 0.9rem;
     }
-    .feedback.correct {
-        background: #d4edda;
-        color: #155724;
+    
+    .progress-info {
+        font-size: 0.85rem;
     }
-    .feedback.wrong {
-        background: #f8d7da;
-        color: #721c24;
-    }
-    .next-card-section {
-        margin-top: 1.5rem;
-        text-align: center;
-    }
-    @media (max-width: 600px) {
-        .study-container h1 { font-size: 1.5rem; }
-        .stats-bar { flex-direction: column; gap: 0.5rem; }
-        .options { grid-template-columns: 1fr; }
-        .term-display { font-size: 2.5rem; }
-        .sentence-display { font-size: 1.3rem; padding: 1rem; }
-        .exercise-container { padding: 1.5rem; }
-    }
+}
 </style>
 
-<div class="study-container" 
-     data-card-id="{{ card.pk|default:0 }}"
-     data-total-cards="{{ total_due|default:0 }}"
-     data-deck-id="{{ deck.pk }}"
-     data-exercise-type="{{ exercise.type|default:'multiple_choice' }}"
-     data-correct-answer="{{ exercise.correct|default:''|escapejs }}">
-    
+<div class="study-container" data-card-id="{{ card.pk|default:0 }}" data-total-cards="{{ total_due|default:0 }}" data-deck-id="{{ deck.pk }}" data-exercise-type="{{ exercise.type|default:'multiple_choice' }}" data-correct-answer="{{ exercise.correct|default:''|escapejs }}">
     <h1>{{ deck.name }}</h1>
-    
     <div class="stats-bar">
-        <span>📚 Всего: {{ stats.total_cards }}</span>
-        <span>✅ Освоено: {{ stats.mastered }} ({{ stats.mastered_percent }}%)</span>
-        <span>📖 В процессе: {{ stats.learning }}</span>
-        <span>⚠️ Сложные: {{ stats.struggling }}</span>
+        <span>Всего: {{ stats.total_cards }}</span>
+        <span>Освоено: {{ stats.mastered }} ({{ stats.mastered_percent }}%)</span>
+        <span>В процессе: {{ stats.learning }}</span>
+        <span>Сложные: {{ stats.struggling }}</span>
     </div>
-    
     {% if no_cards %}
         <div class="message">
-            <h2>🎉 Обучение завершено!</h2>
+            <h2>Обучение завершено!</h2>
             <p>Все карточки на сегодня пройдены.</p>
-            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn">Вернуться к колоде</a>
-            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-success">Посмотреть результаты</a>
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn mt-2">Вернуться к колоде</a>
+            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-success mt-2">Посмотреть результаты</a>
         </div>
     {% else %}
-        <div class="progress-info">
-            <span>Карточка <span id="current-card-num">1</span> из {{ total_due }}</span>
-        </div>
-        
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-        </div>
-        
+        <div class="progress-info"><span>Карточка <span id="current-card-num">1</span> из {{ total_due }}</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
         <div class="exercise-container">
-        {% if exercise.type == 'multiple_choice' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="term-display">{{ exercise.term }}</div>
-            <div class="options">
-                {% for option in exercise.options %}
-                    <button class="option-btn" data-option="{{ option|escapejs }}">
-                        {{ option }}
-                    </button>
-                {% endfor %}
-            </div>
-        
-        {% elif exercise.type == 'typing' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="term-display">{{ exercise.term }}</div>
-            <input type="text" id="answer-input" placeholder="Введите перевод" autocomplete="off" autofocus>
-            {% if exercise.hint %}
-            <div class="hint">{{ exercise.hint }}</div>
-            {% endif %}
-            <button class="btn" id="submit-typing">Проверить</button>
-        
-        {% elif exercise.type == 'reverse_typing' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="term-display">{{ exercise.definition }}</div>
-            <input type="text" id="answer-input" placeholder="Введите слово" autocomplete="off" autofocus>
-            {% if exercise.hint %}
-            <div class="hint">{{ exercise.hint }}</div>
-            {% endif %}
-            <button class="btn" id="submit-reverse">Проверить</button>
-        
-        {% elif exercise.type == 'fill_blank' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="sentence-display">{{ exercise.sentence|safe }}</div>
-            <input type="text" id="answer-input" placeholder="Введите пропущенное слово" autocomplete="off" autofocus>
-            <button class="btn" id="submit-fill">Проверить</button>
-        
-        {% elif exercise.type == 'true_false' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="term-display">{{ exercise.term }}</div>
-            <div class="sentence-display">«{{ exercise.shown_definition }}»</div>
-            <div class="options">
-                <button class="option-btn" data-option="true">✅ Да, верно</button>
-                <button class="option-btn" data-option="false">❌ Нет, неверно</button>
-            </div>
-        
-        {% elif exercise.type == 'match_synonym' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="term-display">{{ exercise.term }}</div>
-            <div class="options">
-                {% for option in exercise.options %}
-                    <button class="option-btn" data-option="{{ option|escapejs }}">
-                        {{ option }}
-                    </button>
-                {% endfor %}
-            </div>
-        
-        {% elif exercise.type == 'word_scramble' %}
-            <h2>{{ exercise.question }}</h2>
-            <div class="term-display">{{ exercise.term }}</div>
-            <input type="text" id="answer-input" placeholder="Введите слово" autocomplete="off" autofocus>
-            {% if exercise.hint %}
-            <div class="hint">{{ exercise.hint }}</div>
-            {% endif %}
-            <button class="btn" id="submit-typing">Проверить</button>
-        
-        {% else %}
-            <p>Тип упражнения: {{ exercise.type }}</p>
-            <pre>{{ exercise|pprint }}</pre>
-        {% endif %}
-    </div>
-        
-        <div class="feedback" id="feedback" style="display: none;"></div>
-        <div class="next-card-section" id="next-card-section" style="display: none;">
-            <button class="btn btn-success" id="next-card-btn">Следующая карточка →</button>
+            {% if exercise.type == 'multiple_choice' %}
+                <h2>{{ exercise.question }}</h2><div class="term-display">{{ exercise.term }}</div>
+                <div class="options">{% for option in exercise.options %}<button class="option-btn" data-option="{{ option|escapejs }}">{{ option }}</button>{% endfor %}</div>
+            {% elif exercise.type == 'typing' %}
+                <h2>{{ exercise.question }}</h2><div class="term-display">{{ exercise.term }}</div>
+                <input type="text" id="answer-input" placeholder="Введите перевод" autocomplete="off" autofocus>
+                {% if exercise.hint %}<div class="help-text">{{ exercise.hint }}</div>{% endif %}<button class="btn btn-primary mt-2" id="submit-typing">Проверить</button>
+            {% elif exercise.type == 'reverse_typing' %}
+                <h2>{{ exercise.question }}</h2><div class="term-display">{{ exercise.definition }}</div>
+                <input type="text" id="answer-input" placeholder="Введите слово" autocomplete="off" autofocus>
+                {% if exercise.hint %}<div class="help-text">{{ exercise.hint }}</div>{% endif %}<button class="btn btn-primary mt-2" id="submit-reverse">Проверить</button>
+            {% elif exercise.type == 'fill_blank' %}
+                <h2>{{ exercise.question }}</h2><div class="sentence-display">{{ exercise.sentence|safe }}</div>
+                <input type="text" id="answer-input" placeholder="Введите пропущенное слово" autocomplete="off" autofocus>
+                <button class="btn btn-primary mt-2" id="submit-fill">Проверить</button>
+            {% elif exercise.type == 'true_false' %}
+                <h2>{{ exercise.question }}</h2><div class="term-display">{{ exercise.term }}</div>
+                <div class="sentence-display">«{{ exercise.shown_definition }}»</div>
+                <div class="options"><button class="option-btn" data-option="true">Да, верно</button><button class="option-btn" data-option="false">Нет, неверно</button></div>
+            {% elif exercise.type == 'match_synonym' %}
+                <h2>{{ exercise.question }}</h2><div class="term-display">{{ exercise.term }}</div>
+                <div class="options">{% for option in exercise.options %}<button class="option-btn" data-option="{{ option|escapejs }}">{{ option }}</button>{% endfor %}</div>
+            {% elif exercise.type == 'word_scramble' %}
+                <h2>{{ exercise.question }}</h2><div class="term-display">{{ exercise.term }}</div>
+                <input type="text" id="answer-input" placeholder="Введите слово" autocomplete="off" autofocus>
+                {% if exercise.hint %}<div class="help-text">{{ exercise.hint }}</div>{% endif %}<button class="btn btn-primary mt-2" id="submit-typing">Проверить</button>
+            {% else %}<p class="text-center text-muted">Тип упражнения: {{ exercise.type }}</p>{% endif %}
         </div>
-        
-        <form id="answer-form" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="card_id" id="card-id-input" value="{{ card.pk }}">
-            <input type="hidden" name="is_correct" id="is-correct-input" value="false">
-        </form>
+        <div class="feedback" id="feedback" style="display: none;"></div>
+        <div class="next-card-section" id="next-card-section" style="display: none;"><button class="btn btn-success" id="next-card-btn">Следующая карточка →</button></div>
+        <form id="answer-form" method="post">{% csrf_token %}<input type="hidden" name="card_id" id="card-id-input" value="{{ card.pk }}"><input type="hidden" name="is_correct" id="is-correct-input" value="false"></form>
     {% endif %}
 </div>
-
 <script src="{% static 'cards/js/study_session.js' %}"></script>
 {% endblock %}

@@ -7,14 +7,21 @@ from django.views.generic import CreateView, UpdateView, DeleteView, View
 from django.http import HttpResponse
 from apps.cards.models import Deck, Flashcard
 from apps.cards.services.llm_generator import LLMGeneratorService
-from core.mixins import DeckAccessMixin
 
 
-class FlashcardCreateView(LoginRequiredMixin, DeckAccessMixin, CreateView):
+class FlashcardCreateView(LoginRequiredMixin, CreateView):
     """Создание одной карточки с авто-генерацией."""
     model = Flashcard
     template_name = 'cards/flashcard_form.html'
     fields = ['term']
+    
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
+        # Проверка доступа к колоде
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            messages.error(request, "У вас нет доступа к этой колоде.")
+            return redirect('cards:deck_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
@@ -50,9 +57,16 @@ class FlashcardCreateView(LoginRequiredMixin, DeckAccessMixin, CreateView):
         return context
 
 
-class FlashcardBulkCreateView(LoginRequiredMixin, DeckAccessMixin, View):
+class FlashcardBulkCreateView(LoginRequiredMixin, View):
     """Массовое создание карточек по теме через ИИ."""
     template_name = 'cards/flashcard_bulk_form.html'
+    
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            messages.error(request, "У вас нет доступа к этой колоде.")
+            return redirect('cards:deck_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def get(self, request: Any, deck_pk: int) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=deck_pk)
@@ -118,7 +132,6 @@ class FlashcardUpdateView(LoginRequiredMixin, UpdateView):
     
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         flashcard = self.get_object()
-        # Проверка доступа через колоду
         if not (flashcard.deck.owner == request.user or request.user.is_staff):  # type: ignore[attr-defined, union-attr]
             return redirect('cards:deck_detail', pk=flashcard.deck.pk)  # type: ignore[attr-defined, union-attr]
         return super().dispatch(request, *args, **kwargs)

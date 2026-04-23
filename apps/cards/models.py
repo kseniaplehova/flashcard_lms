@@ -21,6 +21,13 @@ class Deck(models.Model):
         on_delete=models.CASCADE,
         related_name='decks'
     )
+
+    likes = models.ManyToManyField(
+        User,
+        related_name='liked_decks',
+        blank=True,
+        verbose_name='Лайки'
+    )
     visibility = models.CharField(
         max_length=10,
         choices=VISIBILITY_CHOICES,
@@ -28,7 +35,7 @@ class Deck(models.Model):
         db_index=True,
         help_text='Кто может видеть эту колоду'
     ) 
-    
+
     is_public = models.BooleanField(
         default=False,
         db_index=True,

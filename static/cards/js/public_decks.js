@@ -6,10 +6,7 @@
         return csrfInput ? csrfInput.value : '';
     }
     
-    async function toggleLike(event) {
-        const btn = event.currentTarget;
-        const deckId = btn.dataset.deckId;
-        
+    async function toggleLike(deckId, btn) {
         try {
             const response = await fetch(`/decks/${deckId}/like/`, {
                 method: 'POST',
@@ -33,11 +30,6 @@
         }
     }
     
-    // Навешиваем обработчики после загрузки
-    document.addEventListener('DOMContentLoaded', function() {
-        const likeButtons = document.querySelectorAll('.like-btn');
-        likeButtons.forEach(btn => {
-            btn.addEventListener('click', toggleLike);
-        });
-    });
+    // Делаем функцию глобальной для onclick
+    window.toggleLike = toggleLike;
 })();

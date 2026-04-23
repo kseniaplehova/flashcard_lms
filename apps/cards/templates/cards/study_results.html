@@ -248,17 +248,17 @@
     <!-- Общая статистика -->
     <div class="stats-summary">
         <div class="stat-card mastered">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ mastered_count }}</div>
             <div class="stat-label">Освоено</div>
         </div>
         <div class="stat-card struggling">
-            <div class="stat-icon">⚠️</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ struggling_count }}</div>
             <div class="stat-label">Требуют внимания</div>
         </div>
         <div class="stat-card total">
-            <div class="stat-icon">📚</div>
+            <div class="stat-icon"></div>
             <div class="stat-value">{{ total_cards }}</div>
             <div class="stat-label">Всего карточек</div>
         </div>
@@ -297,7 +297,7 @@
     <!-- Проблемные карточки -->
     {% if struggling_cards %}
     <div class="cards-section">
-        <h2>⚠️ Требуют повторения ({{ struggling_count }})</h2>
+        <h2>Требуют повторения ({{ struggling_count }})</h2>
         <div class="cards-grid">
             {% for card in struggling_cards %}
             <div class="card-item struggling-item">
@@ -305,7 +305,7 @@
                 <div class="card-definition">{{ card.definition }}</div>
                 <div class="card-stats">
                     <span class="ef-badge" title="Фактор легкости">EF: {{ card.easiness_factor }}</span>
-                    <span class="errors-badge">❌ Ошибок: {{ card.total_errors }}</span>
+                    <span class="errors-badge">Ошибок: {{ card.total_errors }}</span>
                 </div>
             </div>
             {% endfor %}

@@ -46,28 +46,28 @@
 
 <div class="retry-container">
     <div class="message-box">
-        <h2>🔄 Круг повторения завершён!</h2>
+        <h2>Круг повторения завершён!</h2>
         
         <div class="stats-mini">
             <div class="stat-mini mastered">
                 <div class="value">{{ mastered_count }}</div>
-                <div class="label">✅ Освоено</div>
+                <div class="label">Освоено</div>
             </div>
             <div class="stat-mini struggling">
                 <div class="value">{{ struggling_count }}</div>
-                <div class="label">⚠️ Осталось</div>
+                <div class="label">Осталось</div>
             </div>
         </div>
         
         {% if struggling_cards %}
             <p class="progress-update">Отличный прогресс! Осталось ещё немного.</p>
             <a href="{% url 'cards:retry_struggling' deck.pk %}" class="btn btn-primary btn-large">
-                🔄 Продолжить повторение
+                Продолжить повторение
             </a>
         {% else %}
-            <p class="progress-update">🎉 Поздравляем! Все карточки освоены!</p>
+            <p class="progress-update">Поздравляем! Все карточки освоены!</p>
             <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-success btn-large">
-                ✅ Посмотреть финальные результаты
+                Посмотреть финальные результаты
             </a>
         {% endif %}
         

@@ -3,13 +3,149 @@
 {% block title %}Регистрация{% endblock %}
 
 {% block content %}
+<style>
+    .auth-container {
+        max-width: 420px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    .auth-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    .auth-card h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+    .auth-card .form-group {
+        margin-bottom: 1rem;
+    }
+    .auth-card .form-group label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95rem;
+    }
+    .auth-card .form-group input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .auth-card .form-group input:focus {
+        outline: none;
+        border-color: #4facfe;
+    }
+    .auth-card .btn {
+        width: 100%;
+        padding: 0.9rem;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+    }
+    .auth-card .btn-primary {
+        background: #4facfe;
+        color: white;
+        border: none;
+    }
+    .auth-card .btn-primary:hover {
+        background: #3a8fd8;
+    }
+    .auth-links {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+    .auth-links a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+    .help-text {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 0.2rem;
+    }
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.3rem 0 0;
+        color: #e74c3c;
+        font-size: 0.85rem;
+    }
+    @media (max-width: 480px) {
+        .auth-card {
+            padding: 1.5rem;
+        }
+        .auth-card h2 {
+            font-size: 1.4rem;
+        }
+    }
+</style>
+
 <div class="auth-container">
-    <h2>Регистрация</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Зарегистрироваться</button>
-    </form>
-    <p style="margin-top: 1rem;">Уже есть аккаунт? <a href="{% url 'accounts:login' %}">Войти</a></p>
+    <div class="auth-card">
+        <h2>Регистрация</h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <ul class="messages">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li class="error">{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="id_username">Имя пользователя</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="errorlist">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+                <div class="help-text">Только буквы, цифры и @/./+/-/_</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_email">Email (необязательно)</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <ul class="errorlist">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password1">Пароль</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <ul class="errorlist">{% for error in form.password1.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+                <div class="help-text">Минимум 8 символов, не простой пароль</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password2">Подтверждение пароля</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <ul class="errorlist">{% for error in form.password2.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary"> Зарегистрироваться</button>
+        </form>
+        
+        <div class="auth-links">
+            <p>Уже есть аккаунт? <a href="{% url 'accounts:login' %}">Войти</a></p>
+        </div>
+    </div>
 </div>
 {% endblock %}

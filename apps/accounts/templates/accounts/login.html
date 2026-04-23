@@ -3,13 +3,109 @@
 {% block title %}Вход{% endblock %}
 
 {% block content %}
+<style>
+    .auth-container {
+        max-width: 420px;
+        margin: 3rem auto;
+        padding: 0 1rem;
+    }
+    .auth-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    .auth-card h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+    .auth-card .form-group {
+        margin-bottom: 1.2rem;
+    }
+    .auth-card .form-group input {
+        width: 100%;
+        padding: 0.9rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .auth-card .form-group input:focus {
+        outline: none;
+        border-color: #4facfe;
+    }
+    .auth-card .btn {
+        width: 100%;
+        padding: 0.9rem;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+    }
+    .auth-card .btn-primary {
+        background: #4facfe;
+        color: white;
+        border: none;
+    }
+    .auth-card .btn-primary:hover {
+        background: #3a8fd8;
+    }
+    .auth-links {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+    .auth-links a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.3rem 0 0;
+        color: #e74c3c;
+        font-size: 0.85rem;
+    }
+    @media (max-width: 480px) {
+        .auth-card {
+            padding: 1.5rem;
+        }
+        .auth-card h2 {
+            font-size: 1.4rem;
+        }
+    }
+</style>
+
 <div class="auth-container">
-    <h2>Вход в систему</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Войти</button>
-    </form>
-    <p style="margin-top: 1rem;">Нет аккаунта? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></p>
+    <div class="auth-card">
+        <h2>Вход в систему</h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <ul class="messages">
+                <li class="error">Неверное имя пользователя или пароль.</li>
+            </ul>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="id_username">Имя пользователя</label>
+                <input type="text" name="username" id="id_username" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password">Пароль</label>
+                <input type="password" name="password" id="id_password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Войти</button>
+        </form>
+        
+        <div class="auth-links">
+            <p>Нет аккаунта? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></p>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,384 +1,76 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Главная - Flashcard LMS{% endblock %}
 
 {% block content %}
 <style>
-    .dashboard-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    
-    .welcome-header {
-        margin-bottom: 2.5rem;
-    }
-    
-    .welcome-header h1 {
-        color: #2c3e50;
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .welcome-header p {
-        color: #666;
-        font-size: 1.1rem;
-    }
-    
-    /* Карточки статистики */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 2.5rem;
-    }
-    
-    .stat-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.8rem 1.5rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        transition: transform 0.2s, box-shadow 0.2s;
-        text-align: center;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-    }
-    
-    .stat-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.8rem;
-    }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-        line-height: 1.2;
-    }
-    
-    .stat-label {
-        color: #666;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 0.3rem;
-    }
-    
+    .dashboard-container { max-width: 1200px; margin: 0 auto; }
+    .welcome-header { margin-bottom: 2.5rem; }
+    .welcome-header h1 { font-size: 2rem; margin-bottom: 0.3rem; }
+    .welcome-header p { color: #666; font-size: 1.1rem; }
     .stat-card.decks .stat-value { color: #3498db; }
     .stat-card.cards .stat-value { color: #9b59b6; }
     .stat-card.mastered .stat-value { color: #27ae60; }
     .stat-card.learning .stat-value { color: #f39c12; }
-    
-    /* Секция с колодами */
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-    
-    .section-header h2 {
-        color: #2c3e50;
-        font-size: 1.5rem;
-    }
-    
-    .decks-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .deck-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.8rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        transition: transform 0.2s, box-shadow 0.2s;
-        border: 1px solid #f0f0f0;
-    }
-    
-    .deck-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-    }
-    
-    .deck-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 0.8rem;
-    }
-    
-    .deck-name {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #2c3e50;
-        text-decoration: none;
-    }
-    
-    .deck-name:hover {
-        color: #3498db;
-    }
-    
-    .language-badge {
-        background: #f0f0f0;
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        color: #666;
-    }
-    
-    .deck-description {
-        color: #666;
-        margin-bottom: 1.2rem;
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }
-    
-    .deck-stats {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        font-size: 0.85rem;
-    }
-    
-    .deck-stats span {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        color: #666;
-    }
-    
-    .deck-progress {
-        margin-bottom: 1.5rem;
-    }
-    
-    .progress-label {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        color: #666;
-        margin-bottom: 0.3rem;
-    }
-    
-    .progress-bar {
-        height: 8px;
-        background: #ecf0f1;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        border-radius: 4px;
-    }
-    
-    .deck-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    
-    .btn {
-        display: inline-block;
-        padding: 0.6rem 1.2rem;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: all 0.2s;
-        text-decoration: none;
-        text-align: center;
-    }
-    
-    .btn-primary {
-        background: #4facfe;
-        color: white;
-    }
-    
-    .btn-primary:hover {
-        background: #3a8fd8;
-        transform: translateY(-2px);
-    }
-    
-    .btn-success {
-        background: #2ed573;
-        color: white;
-    }
-    
-    .btn-success:hover {
-        background: #26b561;
-        transform: translateY(-2px);
-    }
-    
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #ddd;
-        color: #666;
-    }
-    
-    .btn-outline:hover {
-        background: #f5f5f5;
-    }
-    
-    .btn-large {
-        padding: 0.9rem 2rem;
-        font-size: 1rem;
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    }
-    
-    .empty-state-icon {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .empty-state h3 {
-        color: #2c3e50;
-        margin-bottom: 1rem;
-        font-size: 1.5rem;
-    }
-    
-    .empty-state p {
-        color: #666;
-        margin-bottom: 2rem;
-    }
-    
-    .quick-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    
-    @media (max-width: 768px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .decks-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .welcome-header h1 {
-            font-size: 1.5rem;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .decks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .deck-card { background: white; border-radius: 20px; padding: 1.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #f0f0f0; }
+    .deck-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.12); }
+    .deck-name { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
+    .deck-name:hover { color: #3498db; }
+    .deck-description { color: #666; margin: 0.8rem 0; font-size: 0.95rem; }
+    .deck-meta { display: flex; gap: 1rem; font-size: 0.85rem; color: #888; margin-bottom: 1rem; }
+    .deck-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    @media (max-width: 768px) { .decks-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) {
+    .dashboard-container { padding: 0.5rem; }
+    .welcome-header h1 { font-size: 1.3rem; }
+    .welcome-header p { font-size: 0.9rem; }
+    .section-header { flex-direction: column; }
+    .section-header .btn { width: 100%; text-align: center; }
+    .deck-card { padding: 1.2rem; }
+    .deck-name { font-size: 1.1rem; }
+    .decks-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 <div class="dashboard-container">
-    <!-- Приветствие -->
     <div class="welcome-header">
-        <h1>👋 Привет, {{ user.username }}!</h1>
+        <h1>Привет, {{ user.username }}!</h1>
     </div>
-    
-    <!-- Общая статистика -->
     <div class="stats-grid">
-        <div class="stat-card decks">
-            <div class="stat-icon"></div>
-            <div class="stat-value">{{ decks|length }}</div>
-            <div class="stat-label">Колод</div>
-        </div>
-        <div class="stat-card cards">
-            <div class="stat-icon"></div>
-            <div class="stat-value">{{ total_cards }}</div>
-            <div class="stat-label">Карточек</div>
-        </div>
-        <div class="stat-card mastered">
-            <div class="stat-icon"></div>
-            <div class="stat-value">{{ mastered_total }}</div>
-            <div class="stat-label">Освоено</div>
-        </div>
-        <div class="stat-card learning">
-            <div class="stat-icon"></div>
-            <div class="stat-value">{{ learning_total }}</div>
-            <div class="stat-label">В процессе</div>
-        </div>
+        <div class="stat-card decks"><div class="stat-icon"></div><div class="stat-value">{{ decks|length }}</div><div class="stat-label">Колод</div></div>
+        <div class="stat-card cards"><div class="stat-icon"></div><div class="stat-value">{{ total_cards }}</div><div class="stat-label">Карточек</div></div>
+        <div class="stat-card mastered"><div class="stat-icon"></div><div class="stat-value">{{ mastered_total }}</div><div class="stat-label">Освоено</div></div>
+        <div class="stat-card learning"><div class="stat-icon"></div><div class="stat-value">{{ learning_total }}</div><div class="stat-label">В процессе</div></div>
     </div>
-    
-    <!-- Колоды -->
     <div class="section-header">
-        <h2>📁 Мои колоды</h2>
-        <a href="{% url 'cards:deck_create' %}" class="btn btn-primary">➕ Создать колоду</a>
+        <h2>Мои колоды</h2>
+        <a href="{% url 'cards:deck_create' %}" class="btn btn-primary">Создать колоду</a>
     </div>
-    
     {% if decks %}
         <div class="decks-grid">
             {% for deck in decks %}
-                <div class="deck-card">
-                    <div class="deck-header">
-                        <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-name">
-                            {{ deck.name }}
-                        </a>
-                        <span class="language-badge">{{ deck.target_language|upper }}</span>
-                    </div>
-                    
-                    {% if deck.description %}
-                        <p class="deck-description">{{ deck.description|truncatewords:15 }}</p>
-                    {% else %}
-                        <p class="deck-description" style="color: #999;">Нет описания</p>
-                    {% endif %}
-                    
-                    <div class="deck-stats">
-                        <span>🎴 {{ deck.flashcard_set.count }} карточек</span>
-                        <span>📅 {{ deck.created_at|date:"d.m.Y" }}</span>
-                    </div>
-                    
-                    <!-- Прогресс можно добавить позже -->
-                    
-                    <div class="deck-actions">
-                        <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">
-                            🎯 Учить
-                        </a>
-                        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">
-                            📋 Просмотр
-                        </a>
-                    </div>
+            <div class="deck-card">
+                <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-name">{{ deck.name }}</a>
+                <p class="deck-description">{{ deck.description|default:"Нет описания" }}</p>
+                <div class="deck-meta">
+                    <span>{{ deck.flashcard_set.count }} карточек</span>
+                    <span>{{ deck.created_at|date:"d.m.Y" }}</span>
                 </div>
+                <div class="deck-actions">
+                    <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">Учить</a>
+                    <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">Просмотр</a>
+                </div>
+            </div>
             {% endfor %}
         </div>
     {% else %}
         <div class="empty-state">
-            <div class="empty-state-icon">📭</div>
+            <div class="empty-state-icon"></div>
             <h3>У вас пока нет колод</h3>
             <p>Создайте свою первую колоду и начните учиться!</p>
-            <div class="quick-actions">
-                <a href="{% url 'cards:deck_create' %}" class="btn btn-primary btn-large">
-                    ➕ Создать колоду
-                </a>
-                <a href="{% url 'cards:deck_list' %}" class="btn btn-outline btn-large">
-                    📚 Все колоды
-                </a>
-            </div>
-        </div>
-    {% endif %}
-    
-    <!-- Быстрые действия (если есть колоды) -->
-    {% if decks %}
-        <div style="margin-top: 2rem; text-align: center;">
-            <a href="{% url 'cards:deck_list' %}" class="btn btn-outline">
-                📋 Посмотреть все колоды
-            </a>
+            <a href="{% url 'cards:deck_create' %}" class="btn btn-primary btn-large">Создать колоду</a>
         </div>
     {% endif %}
 </div>
