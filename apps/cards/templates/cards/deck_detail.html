@@ -3,57 +3,250 @@
 {% block title %}{{ deck.name }}{% endblock %}
 
 {% block content %}
-<div class="deck-container">
-    <h1>{{ deck.name }}</h1>
-    <p>{{ deck.description }}</p>
+<style>
+    .deck-detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
     
-    <div style="margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">🎯 Начать обучение</a>
-        <a href="{% url 'cards:card_create' deck.pk %}" class="btn">📝 Добавить карточку</a>
-        <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn" style="background: #9b59b6; color: white;">
-            🤖 Сгенерировать по теме
-        </a>
-        <a href="{% url 'cards:deck_update' deck.pk %}" class="btn">✏️ Редактировать колоду</a>
-        <h1>
-    {{ deck.name }}
-    {% if deck.visibility == 'public' %}
-        <span style="background: #27ae60; color: white; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.9rem;">
-            🌍 Публичная колода — видна всем
-        </span>
-    {% else %}
-        <span style="background: #95a5a6; color: white; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.9rem;">
-            🔒 Приватная колода — только вы
-        </span>
-    {% endif %}
-</h1>
-<p>Владелец: <strong>{{ deck.owner.username }}</strong></p>
+    .deck-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .deck-title-section h1 {
+        color: #2c3e50;
+        font-size: 2rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+    
+    .visibility-badge {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .visibility-public {
+        background: #d5f5e3;
+        color: #27ae60;
+    }
+    
+    .visibility-private {
+        background: #f0f0f0;
+        color: #7f8c8d;
+    }
+    
+    .deck-description {
+        color: #666;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+    
+    .deck-meta {
+        display: flex;
+        gap: 2rem;
+        color: #888;
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+    }
+    
+    .deck-actions {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.7rem 1.3rem;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    
+    .btn-success {
+        background: #2ed573;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #26b561;
+        transform: translateY(-2px);
+    }
+    
+    .btn-primary {
+        background: #4facfe;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #3a8fd8;
+        transform: translateY(-2px);
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #ddd;
+        color: #555;
+    }
+    
+    .btn-outline:hover {
+        background: #f5f5f5;
+    }
+    
+    .cards-section {
+        margin-top: 2rem;
+    }
+    
+    .cards-section h2 {
+        color: #2c3e50;
+        margin-bottom: 1.2rem;
+        font-size: 1.4rem;
+    }
+    
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+    
+    .card-item {
+        background: white;
+        border-radius: 16px;
+        padding: 1.3rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 4px solid #4facfe;
+        transition: transform 0.2s;
+    }
+    
+    .card-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    }
+    
+    .card-term {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.3rem;
+    }
+    
+    .card-definition {
+        color: #555;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .card-example {
+        color: #888;
+        font-size: 0.9rem;
+        font-style: italic;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    
+    .empty-state p {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 600px) {
+        .deck-header {
+            flex-direction: column;
+        }
+        
+        .cards-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="deck-detail-container">
+    <div class="deck-header">
+        <div class="deck-title-section">
+            <h1>
+                {{ deck.name }}
+                {% if deck.visibility == 'public' %}
+                    <span class="visibility-badge visibility-public">🌍 Публичная</span>
+                {% else %}
+                    <span class="visibility-badge visibility-private">🔒 Приватная</span>
+                {% endif %}
+            </h1>
+            {% if deck.description %}
+                <p class="deck-description">{{ deck.description }}</p>
+            {% endif %}
+            <div class="deck-meta">
+                <span>🗣️ {{ deck.target_language|upper }} → {{ deck.native_language|upper }}</span>
+                <span>🎴 {{ flashcards|length }} карточек</span>
+                <span>👤 {{ deck.owner.username }}</span>
+                <span>📅 {{ deck.created_at|date:"d.m.Y" }}</span>
+            </div>
+        </div>
+        
+        <div class="deck-actions">
+            <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">
+                🎯 Учить
+            </a>
+            {% if can_edit %}
+                <a href="{% url 'cards:deck_update' deck.pk %}" class="btn btn-outline">
+                    ✏️ Редактировать
+                </a>
+            {% endif %}
+        </div>
     </div>
     
-    <h2>Карточки ({{ flashcards|length }})</h2>
-    {% if flashcards %}
-        <div style="display: grid; gap: 1rem;">
-            {% for card in flashcards %}
-            <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <h3>{{ card.term }}</h3>
-                <p><strong>Определение:</strong> {{ card.definition }}</p>
-                {% if card.example_sentence %}
-                <p><strong>Пример:</strong> {{ card.example_sentence }}</p>
-                {% endif %}
-                <div style="margin-top: 0.5rem;">
-                    <a href="{% url 'cards:card_update' card.pk %}" class="btn">Редактировать</a>
-                    <a href="{% url 'cards:card_delete' card.pk %}" class="btn btn-danger">Удалить</a>
+    <!-- Карточки (только просмотр) -->
+    <div class="cards-section">
+        {% if flashcards %}
+            <h2>🎴 Карточки ({{ flashcards|length }})</h2>
+            <div class="cards-grid">
+                {% for card in flashcards %}
+                <div class="card-item">
+                    <div class="card-term">{{ card.term }}</div>
+                    <div class="card-definition">{{ card.definition }}</div>
+                    {% if card.example_sentence %}
+                        <div class="card-example">💬 {{ card.example_sentence }}</div>
+                    {% endif %}
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>В этой колоде пока нет карточек.</p>
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <a href="{% url 'cards:card_create' deck.pk %}" class="btn">Добавить первую карточку</a>
-            <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn" style="background: #9b59b6; color: white;">
-                🤖 Сгенерировать по теме
-            </a>
-        </div>
-    {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <p>📭 В этой колоде пока нет карточек</p>
+                <p style="font-size: 0.9rem;">Перейдите в редактирование, чтобы добавить карточки</p>
+                {% if can_edit %}
+                    <a href="{% url 'cards:deck_update' deck.pk %}" class="btn btn-primary">
+                        ✏️ Редактировать колоду
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

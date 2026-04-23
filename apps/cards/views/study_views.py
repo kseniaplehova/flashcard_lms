@@ -1,11 +1,12 @@
 from typing import Any
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from apps.cards.models import Deck, Flashcard, UserCardProgress
 from apps.cards.services.srs_engine import SRSEngine
 from apps.cards.services.llm_generator import LLMGeneratorService
+from core.mixins import DeckAccessMixin
 
 
 # Критерий освоенности карточки
@@ -14,15 +15,11 @@ def is_card_mastered(progress: UserCardProgress) -> bool:
     return progress.easiness_factor >= 2.0 and progress.consecutive_correct >= 1
 
 
-class StudySessionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class StudySessionView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     """
     Учебная сессия с разными типами упражнений.
     """
     template_name = 'cards/study_session.html'
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
@@ -123,15 +120,11 @@ class StudySessionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return redirect('cards:study_results', deck_pk=deck.pk)
 
 
-class StudyResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class StudyResultsView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     """
     Страница с результатами обучения.
     """
     template_name = 'cards/study_results.html'
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -149,7 +142,6 @@ class StudyResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         mastered_cards = []
         struggling_cards = []
         
-        print("=== DEBUG StudyResultsView ===")
         for progress in all_progress:
             card_info = {
                 'id': progress.flashcard.pk,
@@ -160,17 +152,10 @@ class StudyResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 'total_errors': progress.total_errors,
             }
             
-            # ВАЖНО: проверяем условие
-            is_mastered = is_card_mastered(progress)
-            print(f"Card: {progress.flashcard.term}, EF={progress.easiness_factor:.2f}, correct={progress.consecutive_correct}, mastered={is_mastered}")
-            
-            if is_mastered:
+            if is_card_mastered(progress):
                 mastered_cards.append(card_info)
             else:
                 struggling_cards.append(card_info)
-        
-        print(f"Mastered: {len(mastered_cards)}, Struggling: {len(struggling_cards)}")
-        print("================================")
         
         struggling_cards.sort(key=lambda x: x['easiness_factor'])
         
@@ -186,21 +171,16 @@ class StudyResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-class RetryStrugglingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class RetryStrugglingView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     """
-    Повторение только проблемных карточек с зацикливанием.
+    Повторение только проблемных карточек.
     """
     template_name = 'cards/study_session.html'
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
         session_key = f'retry_session_{deck.pk}_completed'
         
-        # Инициализируем сессию при первом заходе
         if session_key not in request.session:
             request.session[session_key] = []
             print("DEBUG: NEW RETRY SESSION STARTED")
@@ -212,7 +192,6 @@ class RetryStrugglingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
         user = self.request.user
         
-        # Получаем ВСЕ карточки и фильтруем проблемные
         all_progress = UserCardProgress.objects.filter(
             user=user,
             flashcard__deck=deck,
@@ -224,31 +203,19 @@ class RetryStrugglingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             if not is_card_mastered(p):
                 struggling_cards.append(p.flashcard)
         
-        # Если проблемных карточек нет — показываем сообщение
         if not struggling_cards:
-            stats = SRSEngine.get_statistics(user, deck)
-            context.update({
-                'deck': deck,
-                'stats': stats,
-                'no_cards': True,
-                'all_mastered': True,
-                'session_completed': True,
-            })
-            return context
+            return redirect('cards:retry_complete', deck_pk=deck.pk)  # type: ignore[return-value]
         
         session_key = f'retry_session_{deck.pk}_completed'
         completed_ids = self.request.session.get(session_key, [])
         
-        # Находим первую НЕ пройденную в этом круге карточку
         current_card = None
         for card in struggling_cards:
             if card.pk not in completed_ids:
                 current_card = card
                 break
         
-        # Если все проблемные карточки пройдены в этом круге
         if current_card is None:
-            # Очищаем сессию для нового круга
             self.request.session[session_key] = []
             current_card = struggling_cards[0]
         
@@ -297,7 +264,7 @@ class RetryStrugglingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         card = get_object_or_404(Flashcard, pk=card_id_int, deck=deck)
         progress = UserCardProgress.objects.get(user=request.user, flashcard=card)
         
-        quality = 5 if is_correct else 3  # 3 вместо 2, чтобы меньше штрафовать при повторении
+        quality = 5 if is_correct else 3
         SRSEngine.process_review(progress, quality)
         
         session_key = f'retry_session_{deck.pk}_completed'
@@ -307,7 +274,6 @@ class RetryStrugglingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             completed_ids.append(card_id_int)
             request.session[session_key] = completed_ids
         
-        # Проверяем, есть ли ещё проблемные карточки
         all_progress = UserCardProgress.objects.filter(
             user=request.user,
             flashcard__deck=deck,
@@ -319,32 +285,24 @@ class RetryStrugglingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             if not is_card_mastered(p):
                 struggling_cards.append(p.flashcard)
         
-        # Если проблемных карточек нет — завершаем
         if not struggling_cards:
             request.session.pop(session_key, None)
             return redirect('cards:retry_complete', deck_pk=deck.pk)
         
-        # Проверяем, все ли проблемные карточки пройдены в этом круге
         struggling_ids = [c.pk for c in struggling_cards]
         all_completed_in_round = all(cid in completed_ids for cid in struggling_ids)
         
         if all_completed_in_round:
-            # Завершили круг — показываем промежуточные результаты
             return redirect('cards:retry_results', deck_pk=deck.pk)
         
-        # Продолжаем круг
         return redirect('cards:retry_struggling', deck_pk=deck.pk)
 
 
-class RetryResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class RetryResultsView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     """
     Промежуточные результаты после круга повторения.
     """
     template_name = 'cards/retry_results.html'
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -390,15 +348,11 @@ class RetryResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-class RetryCompleteView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class RetryCompleteView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     """
     Все проблемные карточки освоены!
     """
     template_name = 'cards/retry_complete.html'
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)

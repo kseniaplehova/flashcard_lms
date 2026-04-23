@@ -72,10 +72,11 @@
         margin: 1.5rem 0;
     }
     
-    .visibility-group label {
+    .visibility-group > label {
         font-weight: 600;
         color: #2c3e50;
         margin-bottom: 0.8rem;
+        display: block;
     }
     
     .radio-options {
@@ -137,10 +138,12 @@
         display: flex;
         gap: 1rem;
         margin-top: 2rem;
+        flex-wrap: wrap;
     }
     
     .btn {
         flex: 1;
+        min-width: 150px;
         padding: 1rem;
         border: none;
         border-radius: 12px;
@@ -161,6 +164,26 @@
         background: #3a8fd8;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+    }
+    
+    .btn-success {
+        background: #2ed573;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #26b561;
+        transform: translateY(-2px);
+    }
+    
+    .btn-ai {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-ai:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
     }
     
     .btn-secondary {
@@ -191,6 +214,23 @@
         font-size: 0.85rem;
     }
     
+    .section-divider {
+        border: none;
+        border-top: 2px solid #f0f0f0;
+        margin: 1.5rem 0;
+    }
+    
+    .create-options {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .create-options .btn {
+        min-width: auto;
+        flex: 1;
+    }
+    
     @media (max-width: 500px) {
         .form-card {
             padding: 1.5rem;
@@ -217,7 +257,7 @@
             {% endif %}
         </h2>
         
-        <form method="post">
+        <form method="post" id="deck-form">
             {% csrf_token %}
             
             <!-- Название -->
@@ -310,23 +350,42 @@
                     {% endif %}
                 </div>
             {% else %}
-                <!-- Скрытое поле для обычных пользователей (всегда private) -->
                 <input type="hidden" name="visibility" value="private">
             {% endif %}
             
+            <!-- Кнопки -->
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
-                    {% if deck %}Сохранить изменения{% else %}Создать колоду{% endif %}
+                    {% if deck %}💾 Сохранить{% else %}✅ Создать колоду{% endif %}
                 </button>
                 <a href="{% url 'cards:deck_list' %}" class="btn btn-secondary">
-                    Отмена
+                    ❌ Отмена
                 </a>
             </div>
         </form>
         
+        <!-- Генерация карточек (только при редактировании существующей колоды) -->
+        {% if deck %}
+            <hr class="section-divider">
+            <h3 style="text-align: center; color: #2c3e50; margin-bottom: 1rem;">
+                🤖 Генерация карточек
+            </h3>
+            <p style="text-align: center; color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+                Создайте карточки автоматически с помощью ИИ
+            </p>
+            <div class="create-options">
+                <a href="{% url 'cards:card_create' deck.pk %}" class="btn btn-primary">
+                    📝 Добавить одну карточку
+                </a>
+                <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn btn-ai">
+                    🤖 Сгенерировать по теме
+                </a>
+            </div>
+        {% endif %}
+        
         {% if user.is_staff %}
             <div class="admin-note">
-                Вы администратор — можете создавать публичные колоды, которые будут видны всем пользователям.
+                👑 Вы администратор — можете создавать публичные колоды, которые будут видны всем пользователям.
             </div>
         {% endif %}
     </div>

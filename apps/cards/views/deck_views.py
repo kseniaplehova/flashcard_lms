@@ -1,5 +1,5 @@
 from typing import Any
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import QuerySet
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django import forms
 from apps.cards.models import Deck
 from apps.cards.services.statistics import DeckProgressAggregator
+from core.mixins import DeckAccessMixin, OwnerOrStaffMixin
 
 
 class DeckListView(LoginRequiredMixin, ListView):
@@ -59,16 +60,11 @@ class DeckCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class DeckDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class DeckDetailView(LoginRequiredMixin, DeckAccessMixin, DetailView):
     """Детальная страница колоды"""
     model = Deck
     template_name = 'cards/deck_detail.html'
     context_object_name = 'deck'
-    
-    def test_func(self) -> bool:
-        deck = self.get_object()
-        user = self.request.user
-        return (deck.owner == user or user.is_staff or deck.visibility == 'public')  # type: ignore[attr-defined]
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -86,16 +82,11 @@ class DeckDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         return context
 
 
-class DeckUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class DeckUpdateView(LoginRequiredMixin, OwnerOrStaffMixin, UpdateView):
     """Редактирование колоды"""
     model = Deck
     template_name = 'cards/deck_form.html'
     success_url = reverse_lazy('cards:deck_list')
-    
-    def test_func(self) -> bool:
-        deck = self.get_object()
-        user = self.request.user
-        return deck.owner == user or user.is_staff  # type: ignore[attr-defined]
     
     def get_form_class(self):
         if self.request.user.is_staff:
@@ -118,13 +109,8 @@ class DeckUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return UserDeckForm
 
 
-class DeckDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class DeckDeleteView(LoginRequiredMixin, OwnerOrStaffMixin, DeleteView):
     """Удаление колоды"""
     model = Deck
     template_name = 'cards/deck_confirm_delete.html'
     success_url = reverse_lazy('cards:deck_list')
-    
-    def test_func(self) -> bool:
-        deck = self.get_object()
-        user = self.request.user
-        return deck.owner == user or user.is_staff  # type: ignore[attr-defined]

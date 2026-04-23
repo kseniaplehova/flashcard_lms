@@ -1,23 +1,20 @@
 from typing import Any
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import CreateView, UpdateView, DeleteView, View
 from django.http import HttpResponse
 from apps.cards.models import Deck, Flashcard
 from apps.cards.services.llm_generator import LLMGeneratorService
+from core.mixins import DeckAccessMixin
 
 
-class FlashcardCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class FlashcardCreateView(LoginRequiredMixin, DeckAccessMixin, CreateView):
     """Создание одной карточки с авто-генерацией."""
     model = Flashcard
     template_name = 'cards/flashcard_form.html'
     fields = ['term']
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def form_valid(self, form: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
@@ -36,10 +33,7 @@ class FlashcardCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             
             form.instance.definition = f"Перевод: {term}"
             form.instance.example_sentence = generated.get('example', '')
-            messages.success(
-                self.request, 
-                f"✅ Карточка '{term}' создана!"
-            )
+            messages.success(self.request, f"✅ Карточка '{term}' создана!")
         except Exception as e:
             form.instance.definition = term
             messages.error(self.request, f"❌ Ошибка генерации: {str(e)}")
@@ -56,13 +50,9 @@ class FlashcardCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return context
 
 
-class FlashcardBulkCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class FlashcardBulkCreateView(LoginRequiredMixin, DeckAccessMixin, View):
     """Массовое создание карточек по теме через ИИ."""
     template_name = 'cards/flashcard_bulk_form.html'
-    
-    def test_func(self) -> bool:
-        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        return deck.owner == self.request.user  # type: ignore[attr-defined]
     
     def get(self, request: Any, deck_pk: int) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=deck_pk)
@@ -97,8 +87,6 @@ class FlashcardBulkCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
                 term = str(card_data.get('term', '')).strip()
                 translation = str(card_data.get('translation', '')).strip()
                 
-                print(f"DEBUG: term='{term}', translation='{translation}'")
-                
                 if term and translation:
                     Flashcard.objects.create(
                         deck=deck,
@@ -114,24 +102,26 @@ class FlashcardBulkCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
             if created_count > 0:
                 messages.success(request, f"✅ Создано {created_count} карточек по теме «{topic}»!")
             else:
-                messages.warning(request, f"⚠️ Не удалось создать карточки. Попробуйте другую тему.")
+                messages.warning(request, "⚠️ Не удалось создать карточки. Попробуйте другую тему.")
             
         except Exception as e:
             messages.error(request, f"❌ Ошибка генерации: {str(e)}")
-            print(f"DEBUG ERROR: {e}")
         
         return redirect('cards:deck_detail', pk=deck_pk)
 
 
-class FlashcardUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class FlashcardUpdateView(LoginRequiredMixin, UpdateView):
     """Редактирование флеш-карты"""
     model = Flashcard
     template_name = 'cards/flashcard_form.html'
     fields = ['term', 'definition', 'part_of_speech', 'base_difficulty', 'example_sentence', 'is_active']
     
-    def test_func(self) -> bool:
-        flashcard: Flashcard = self.get_object()  # type: ignore[assignment]
-        return flashcard.deck.owner == self.request.user  # type: ignore[attr-defined]
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        flashcard = self.get_object()
+        # Проверка доступа через колоду
+        if not (flashcard.deck.owner == request.user or request.user.is_staff):  # type: ignore[attr-defined, union-attr]
+            return redirect('cards:deck_detail', pk=flashcard.deck.pk)  # type: ignore[attr-defined, union-attr]
+        return super().dispatch(request, *args, **kwargs)
     
     def get_success_url(self) -> str:
         flashcard: Flashcard = self.object  # type: ignore[assignment]
@@ -144,14 +134,16 @@ class FlashcardUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return context
 
 
-class FlashcardDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class FlashcardDeleteView(LoginRequiredMixin, DeleteView):
     """Удаление флеш-карты"""
     model = Flashcard
     template_name = 'cards/flashcard_confirm_delete.html'
     
-    def test_func(self) -> bool:
-        flashcard: Flashcard = self.get_object()  # type: ignore[assignment]
-        return flashcard.deck.owner == self.request.user  # type: ignore[attr-defined]
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        flashcard = self.get_object()
+        if not (flashcard.deck.owner == request.user or request.user.is_staff):  # type: ignore[attr-defined, union-attr]
+            return redirect('cards:deck_detail', pk=flashcard.deck.pk)  # type: ignore[attr-defined, union-attr]
+        return super().dispatch(request, *args, **kwargs)
     
     def get_success_url(self) -> str:
         flashcard: Flashcard = self.object  # type: ignore[assignment]
