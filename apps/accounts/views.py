@@ -1,29 +1,39 @@
 from django.contrib.auth import login
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, TemplateView
-from apps.accounts.forms import UserRegistrationForm
-from apps.accounts.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import TemplateView
-from django.utils import timezone
-from django.db.models import Count, Q
-from datetime import timedelta
-from apps.accounts.models import User, UserActivity
-from apps.cards.models import Deck, Flashcard, UserCardProgress
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView, UpdateView
 from django.urls import reverse_lazy
+from django.views.generic import CreateView, TemplateView, UpdateView
 from django.contrib import messages
-from apps.accounts.models import User
-from apps.accounts.forms import ProfileEditForm
-from apps.cards.models import Deck, DeckProgress, UserCardProgress
-from django.db.models import Sum
+from django.utils import timezone
+from django.db.models import Count, Q, Sum
+from datetime import timedelta
+
+from apps.accounts.forms import UserRegistrationForm, ProfileEditForm
+from apps.accounts.models import User, UserActivity
+from apps.cards.models import Deck, Flashcard, DeckProgress, UserCardProgress
+
+
+class RegisterView(CreateView):
+    """
+    Регистрация нового пользователя.
+    SQL: INSERT INTO users (см. sql/init.sql, строка 2)
+    """
+    model = User
+    form_class = UserRegistrationForm
+    template_name = "accounts/register.html"
+    success_url = reverse_lazy("cards:dashboard")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user = self.object  # type: ignore[attr-defined]
+        login(self.request, user)
+        return response
 
 
 class ProfileView(LoginRequiredMixin, TemplateView):
-    """Страница профиля пользователя со статистикой."""
+    """
+    Страница профиля пользователя со статистикой.
+    SQL: sql/queries.sql, строки 9, 40-54
+    """
     template_name = "accounts/profile.html"
 
     def get_context_data(self, **kwargs):
@@ -31,10 +41,12 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         
         # Колоды пользователя
+        # SQL: SELECT COUNT(*) FROM decks WHERE owner_id = ?
         context['total_decks'] = Deck.objects.filter(owner=user).count()
         context['public_decks'] = Deck.objects.filter(owner=user, visibility='public').count()
         
         # Статистика обучения
+        # SQL: SELECT SUM(cards_mastered), SUM(cards_learning), SUM(cards_struggling) FROM deck_progress WHERE user_id = ?
         progress = DeckProgress.objects.filter(user=user).aggregate(
             total_mastered=Sum('cards_mastered'),
             total_learning=Sum('cards_learning'),
@@ -45,16 +57,17 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         context['cards_struggling'] = progress['total_struggling'] or 0
         
         # Общее количество попыток
+        # SQL: SELECT SUM(total_attempts) FROM user_card_progress WHERE user_id = ?
         context['total_attempts'] = UserCardProgress.objects.filter(
             user=user
         ).aggregate(total=Sum('total_attempts'))['total'] or 0
         
         # Последние колоды
+        # SQL: SELECT * FROM decks WHERE owner_id = ? ORDER BY updated_at DESC LIMIT 5
         context['recent_decks'] = Deck.objects.filter(owner=user).order_by('-updated_at')[:5]
         
         # Прогресс по дням (последние 7 дней)
-        from django.utils import timezone
-        from datetime import timedelta
+        # SQL: sql/queries.sql, строка 50
         today = timezone.now().date()
         daily_progress = []
         for i in range(7):
@@ -70,7 +83,10 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):
-    """Редактирование профиля."""
+    """
+    Редактирование профиля.
+    SQL: UPDATE users SET ... WHERE id = ?
+    """
     model = User
     form_class = ProfileEditForm
     template_name = "accounts/profile_edit.html"
@@ -84,22 +100,10 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class RegisterView(CreateView):
-    model = User
-    form_class = UserRegistrationForm
-    template_name = "accounts/register.html"
-    success_url = reverse_lazy("cards:dashboard")
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        user = self.object  # type: ignore[attr-defined]
-        login(self.request, user)
-        return response
-
-
 class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """
     Админ-панель со статистикой.
+    SQL: sql/admin_queries.sql (все запросы)
     """
 
     template_name = "accounts/admin_dashboard.html"
@@ -115,14 +119,16 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         week_ago = now - timedelta(days=7)
         month_ago = now - timedelta(days=30)
 
-        # Общая статистика
+        # Общая статистика (sql/admin_queries.sql, строка 4)
         context["total_users"] = User.objects.count()
+        # Активных сегодня (sql/admin_queries.sql, строка 10)
         context["active_today"] = (
             UserActivity.objects.filter(created_at__date=today)
             .values("user")
             .distinct()
             .count()
         )
+        # Активных за неделю (sql/admin_queries.sql, строка 15)
         context["active_week"] = (
             UserActivity.objects.filter(created_at__gte=week_ago)
             .values("user")
@@ -132,9 +138,10 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context["total_decks"] = Deck.objects.count()
         context["public_decks"] = Deck.objects.filter(visibility="public").count()
         context["total_cards"] = Flashcard.objects.count()
+        # Всего лайков (sql/admin_queries.sql, строка 8)
         context["total_likes"] = Deck.objects.aggregate(total=Count("likes"))["total"]
 
-        # Статистика по дням (последние 7 дней)
+        # Статистика по дням (sql/admin_queries.sql, строка 20)
         daily_stats = []
         for i in range(7):
             date = today - timedelta(days=i)
@@ -147,7 +154,7 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             daily_stats.append({"date": date.strftime("%d.%m"), "count": count})
         context["daily_stats"] = list(reversed(daily_stats))
 
-        # Статистика по языкам
+        # Статистика по языкам (sql/admin_queries.sql, строка 30)
         lang_stats = (
             Deck.objects.values("target_language")
             .annotate(
@@ -160,18 +167,16 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
         language_data = []
         for lang in lang_stats:
-            language_data.append(
-                {
-                    "code": lang["target_language"],
-                    "name": self._get_language_name(lang["target_language"]),
-                    "count": lang["count"],
-                    "public_count": lang["public_count"],
-                    "likes": lang["likes"],
-                }
-            )
+            language_data.append({
+                "code": lang["target_language"],
+                "name": self._get_language_name(lang["target_language"]),
+                "count": lang["count"],
+                "public_count": lang["public_count"],
+                "likes": lang["likes"],
+            })
         context["language_stats"] = language_data
 
-        # Топ активных пользователей
+        # Топ активных пользователей (sql/admin_queries.sql, строка 40)
         context["top_users"] = (
             UserActivity.objects.filter(created_at__gte=month_ago)
             .values("user__username")
@@ -179,17 +184,18 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             .order_by("-activity_count")[:10]
         )
 
-        # Последние действия
+        # Последние действия (sql/admin_queries.sql, строка 47)
         context["recent_activities"] = UserActivity.objects.select_related(
             "user", "deck"
         ).order_by("-created_at")[:20]
 
-        # Популярные колоды
+        # Популярные колоды (sql/admin_queries.sql, строка 55)
         context["popular_decks"] = Deck.objects.annotate(
-            study_count=Count("user_progress"), likes_count=Count("likes")
+            study_count=Count("user_progress"),
+            likes_count=Count("likes")
         ).order_by("-study_count")[:10]
 
-        # Новые пользователи по дням
+        # Новые пользователи по дням (sql/admin_queries.sql, строка 25)
         new_users_stats = []
         for i in range(7):
             date = today - timedelta(days=i)
@@ -199,17 +205,11 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
         return context
 
-    def _get_language_name(self, code):
+    def _get_language_name(self, code: str) -> str:
+        """Возвращает название языка по коду."""
         names = {
-            "en": "Английский",
-            "es": "Испанский",
-            "fr": "Французский",
-            "de": "Немецкий",
-            "it": "Итальянский",
-            "pt": "Португальский",
-            "ja": "Японский",
-            "ko": "Корейский",
-            "zh": "Китайский",
-            "ru": "Русский",
+            "en": "Английский", "es": "Испанский", "fr": "Французский",
+            "de": "Немецкий", "it": "Итальянский", "pt": "Португальский",
+            "ja": "Японский", "ko": "Корейский", "zh": "Китайский", "ru": "Русский",
         }
         return names.get(code, code.upper())

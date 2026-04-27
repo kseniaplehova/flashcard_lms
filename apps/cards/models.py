@@ -8,7 +8,8 @@ User = get_user_model()
 class Deck(models.Model):
     """
     Логическая группа флеш-карт.
-    Поддерживает категоризацию контента и изоляцию статистики.
+    Таблица: decks (см. sql/init.sql, строка 15)
+    SQL: sql/queries.sql, строки 5-13
     """
     VISIBILITY_CHOICES = [
         ('private', 'Приватная'),
@@ -16,100 +17,40 @@ class Deck(models.Model):
     ]
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True, default='')
-    owner = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='decks'
-    )
-
-    likes = models.ManyToManyField(
-        User,
-        related_name='liked_decks',
-        blank=True,
-        verbose_name='Лайки'
-    )
-    visibility = models.CharField(
-        max_length=10,
-        choices=VISIBILITY_CHOICES,
-        default='private',
-        db_index=True,
-        help_text='Кто может видеть эту колоду'
-    ) 
-
-    is_public = models.BooleanField(
-        default=False,
-        db_index=True,
-        help_text='Публичная колода видна всем пользователям'
-    )
-
-    target_language = models.CharField(
-        max_length=50,
-        default='en',
-        help_text='ISO 639-1 code'
-    )
-    native_language = models.CharField(
-        max_length=50,
-        default='ru',
-        help_text='ISO 639-1 code'
-    )
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='decks')
+    likes = models.ManyToManyField(User, related_name='liked_decks', blank=True, verbose_name='Лайки')
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='private', db_index=True)
+    is_public = models.BooleanField(default=False, db_index=True)
+    target_language = models.CharField(max_length=50, default='en')
+    native_language = models.CharField(max_length=50, default='ru')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'decks'
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['owner', 'created_at']),
-        ]
+        indexes = [models.Index(fields=['owner', 'created_at'])]
         verbose_name = 'Колода'
         verbose_name_plural = 'Колоды'
 
     def __str__(self) -> str:
-        owner_username = self.owner.username if self.pk else 'Unknown'
-        return f"{self.name} (Owner: {owner_username})"
+        return f"{self.name} (Owner: {self.owner.username if self.pk else 'Unknown'})"
 
 
 class Flashcard(models.Model):
     """
     Атомарная единица контента.
-    Содержит лексическую пару и метаданные для ИИ-генерации контекста.
+    Таблица: flashcards (см. sql/init.sql, строка 25)
+    SQL: sql/queries.sql, строки 18-24, 56-62
     """
-    DIFFICULTY_CHOICES = [
-        (1, 'Very Easy'),
-        (2, 'Easy'),
-        (3, 'Medium'),
-        (4, 'Hard'),
-        (5, 'Very Hard'),
-    ]
-
-    deck = models.ForeignKey(
-        Deck,
-        on_delete=models.CASCADE,
-        related_name='flashcard_set' 
-    )
+    DIFFICULTY_CHOICES = [(1, 'Very Easy'), (2, 'Easy'), (3, 'Medium'), (4, 'Hard'), (5, 'Very Hard')]
+    deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name='flashcard_set')
     term = models.CharField(max_length=255, db_index=True)
     definition = models.TextField()
-    part_of_speech = models.CharField(
-        max_length=50,
-        blank=True,
-        default='',
-        help_text='Noun, Verb, Adjective, etc.'
-    )
-    example_sentence = models.TextField(
-        blank=True,
-        default='',
-        help_text='AI-generated contextual example'
-    )
-    base_difficulty = models.PositiveSmallIntegerField(
-        choices=DIFFICULTY_CHOICES,
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
-    image_prompt = models.TextField(
-        blank=True,
-        default='',
-        help_text='AI-generated prompt for DALL-E integration (future)'
-    )
+    part_of_speech = models.CharField(max_length=50, blank=True, default='')
+    example_sentence = models.TextField(blank=True, default='')
+    base_difficulty = models.PositiveSmallIntegerField(choices=DIFFICULTY_CHOICES, default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    image_prompt = models.TextField(blank=True, default='')
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -117,10 +58,7 @@ class Flashcard(models.Model):
     class Meta:
         db_table = 'flashcards'
         ordering = ['term']
-        indexes = [
-            models.Index(fields=['deck', 'is_active']),
-            models.Index(fields=['term', 'deck']),
-        ]
+        indexes = [models.Index(fields=['deck', 'is_active']), models.Index(fields=['term', 'deck'])]
         verbose_name = 'Флеш-карта'
         verbose_name_plural = 'Флеш-карты'
 
@@ -130,98 +68,46 @@ class Flashcard(models.Model):
 
 class UserCardProgress(models.Model):
     """
-    Хранилище состояния обучения для алгоритма Spaced Repetition.
-    Реализует классическую модель SM-2 с расширениями для ИИ-адаптации.
+    Хранилище состояния обучения (алгоритм SM-2).
+    Таблица: user_card_progress (см. sql/init.sql, строка 38)
+    SQL: sql/queries.sql, строки 26-36, 50-54
     """
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='card_progress'
-    )
-    flashcard = models.ForeignKey(
-        Flashcard,
-        on_delete=models.CASCADE,
-        related_name='user_progress'
-    )
-    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='card_progress')
+    flashcard = models.ForeignKey(Flashcard, on_delete=models.CASCADE, related_name='user_progress')
     repetition_number = models.PositiveSmallIntegerField(default=1)
-    easiness_factor = models.FloatField(
-        default=2.5,
-        validators=[MinValueValidator(1.3), MaxValueValidator(2.5)]
-    )
-    inter_repetition_interval = models.PositiveIntegerField(
-        default=0,
-        help_text='Interval in days until next review'
-    )
-    
+    easiness_factor = models.FloatField(default=2.5, validators=[MinValueValidator(1.3), MaxValueValidator(2.5)])
+    inter_repetition_interval = models.PositiveIntegerField(default=0)
     consecutive_correct = models.PositiveSmallIntegerField(default=0)
     total_attempts = models.PositiveIntegerField(default=0)
     total_errors = models.PositiveIntegerField(default=0)
-    average_response_time_ms = models.PositiveIntegerField(
-        default=0,
-        help_text='Average latency for correct answers'
-    )
-    
+    average_response_time_ms = models.PositiveIntegerField(default=0)
     last_reviewed_at = models.DateTimeField(null=True, blank=True)
-    next_review_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        db_index=True,
-        help_text='Scheduled date for next repetition'
-    )
-    last_quality_response = models.PositiveSmallIntegerField(
-        default=0,
-        help_text='0-5 grade from user feedback'
-    )
-    
-    requires_context_refresh = models.BooleanField(
-        default=False,
-        help_text='Set to True when consecutive_correct == 0 AND total_errors > 3'
-    )
+    next_review_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    last_quality_response = models.PositiveSmallIntegerField(default=0)
+    requires_context_refresh = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'user_card_progress'
         unique_together = [['user', 'flashcard']]
-        indexes = [
-            models.Index(fields=['user', 'next_review_at']),
-            models.Index(fields=['user', 'requires_context_refresh']),
-        ]
+        indexes = [models.Index(fields=['user', 'next_review_at']), models.Index(fields=['user', 'requires_context_refresh'])]
         verbose_name = 'Прогресс по карточке'
         verbose_name_plural = 'Прогресс по карточкам'
 
     def __str__(self) -> str:
-        user_pk = self.user.pk if self.pk else 0
-        card_pk = self.flashcard.pk if self.pk else 0
-        return f"User {user_pk} | Card {card_pk} | EF: {self.easiness_factor:.2f}"
+        return f"User {self.user.pk if self.pk else 0} | Card {self.flashcard.pk if self.pk else 0} | EF: {self.easiness_factor:.2f}"
 
 
 class DeckProgress(models.Model):
     """
     Агрегированная статистика по колоде.
-    Денормализация для быстрых аналитических срезов в UI.
+    Таблица: deck_progress (см. sql/init.sql, строка 52)
+    SQL: sql/queries.sql, строки 40-48
     """
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='deck_progress'
-    )
-    deck = models.ForeignKey(
-        Deck,
-        on_delete=models.CASCADE,
-        related_name='user_progress'
-    )
-    cards_mastered = models.PositiveIntegerField(
-        default=0,
-        help_text='Cards with EF >= 2.3 and interval >= 21 days'
-    )
-    cards_learning = models.PositiveIntegerField(
-        default=0,
-        help_text='Cards with interval < 21 days'
-    )
-    cards_struggling = models.PositiveIntegerField(
-        default=0,
-        help_text='Cards with EF < 1.7 or consecutive_correct == 0'
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='deck_progress')
+    deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name='user_progress')
+    cards_mastered = models.PositiveIntegerField(default=0)
+    cards_learning = models.PositiveIntegerField(default=0)
+    cards_struggling = models.PositiveIntegerField(default=0)
     last_session_at = models.DateTimeField(null=True, blank=True)
     total_time_spent_seconds = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
@@ -229,35 +115,21 @@ class DeckProgress(models.Model):
     class Meta:
         db_table = 'deck_progress'
         unique_together = [['user', 'deck']]
-        indexes = [
-            models.Index(fields=['user', 'updated_at']),
-        ]
+        indexes = [models.Index(fields=['user', 'updated_at'])]
         verbose_name = 'Прогресс по колоде'
         verbose_name_plural = 'Прогресс по колодам'
 
     def __str__(self) -> str:
-        user_pk = self.user.pk if self.pk else 0
-        deck_pk = self.deck.pk if self.pk else 0
-        return f"User {user_pk} | Deck {deck_pk} | Mastered: {self.cards_mastered}"
+        return f"User {self.user.pk if self.pk else 0} | Deck {self.deck.pk if self.pk else 0} | Mastered: {self.cards_mastered}"
 
 
 class AIGenerationLog(models.Model):
     """
     Журнал запросов к LLM API.
-    Критичен для мониторинга стоимости токенов и отладки промптов.
+    Таблица: ai_generation_logs (см. sql/init.sql, строка 77)
     """
-    user = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='ai_requests'
-    )
-    flashcard = models.ForeignKey(
-        Flashcard,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='generation_logs'
-    )
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ai_requests')
+    flashcard = models.ForeignKey(Flashcard, on_delete=models.SET_NULL, null=True, related_name='generation_logs')
     request_prompt = models.TextField()
     response_content = models.TextField(blank=True, default='')
     model_used = models.CharField(max_length=100, default='gpt-4o-mini')
@@ -274,5 +146,4 @@ class AIGenerationLog(models.Model):
         verbose_name_plural = 'Логи ИИ-генерации'
 
     def __str__(self) -> str:
-        user_pk = self.user.pk if self.user else 0
-        return f"User {user_pk} | {self.model_used} | {'OK' if self.was_successful else 'FAIL'}"
+        return f"User {self.user.pk if self.user else 0} | {self.model_used} | {'OK' if self.was_successful else 'FAIL'}"

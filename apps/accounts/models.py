@@ -5,6 +5,7 @@ from django.db import models
 class User(AbstractUser):
     """
     Кастомная модель пользователя.
+    Таблица: users (см. sql/init.sql, строка 2)
     """
     is_teacher = models.BooleanField(
         default=False,
@@ -19,9 +20,12 @@ class User(AbstractUser):
     def __str__(self) -> str:
         return self.username or self.email or f"User #{self.pk}"
     
+
 class UserActivity(models.Model):
     """
     Отслеживание активности пользователей.
+    Таблица: user_activities (см. sql/init.sql, строка 67)
+    Запросы: sql/admin_queries.sql, строки 10-30
     """
     user = models.ForeignKey(
         User,

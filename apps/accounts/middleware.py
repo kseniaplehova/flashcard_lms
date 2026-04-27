@@ -1,4 +1,3 @@
-from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 from apps.accounts.models import UserActivity
 
@@ -6,6 +5,7 @@ from apps.accounts.models import UserActivity
 class UserActivityMiddleware(MiddlewareMixin):
     """
     Отслеживает активность пользователей.
+    SQL: INSERT INTO user_activities (sql/admin_queries.sql, строка 47)
     """
     
     def process_request(self, request):
@@ -21,10 +21,9 @@ class UserActivityMiddleware(MiddlewareMixin):
                 )
                 request.session[session_key] = True
     
-    def get_client_ip(self, request):
+    def get_client_ip(self, request) -> str:
+        """Получает IP-адрес клиента."""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', '')
