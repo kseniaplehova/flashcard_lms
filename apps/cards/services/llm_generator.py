@@ -373,21 +373,51 @@ class LLMGeneratorService:
         """
         Генерирует список карточек по заданной теме.
         """
-        system_prompt = (
-            f"You are an expert language teacher. "
-            f"Generate EXACTLY {count} vocabulary words about the topic '{topic}'. "
-            f"ONLY words about '{topic}', nothing unrelated. "
-            f"For each word, provide: the word in {target_lang}, "
-            f"translation in {native_lang}. "
-            "Return ONLY a valid JSON object with a 'words' array. "
-            'Example: {"words": [{"term": "apple", "translation": "яблоко"}]}'
-        )
+        non_latin = target_lang in ["zh", "ja", "ko", "ar", "he", "th"]
 
-        user_prompt = (
-            f"Topic: {topic}\n"
-            f"Number of words: {count}\n"
-            f"IMPORTANT: Generate ONLY words about '{topic}'. No unrelated words."
-        )
+        lang_names = {
+            "ja": "Japanese",
+            "zh": "Chinese",
+            "ko": "Korean",
+            "ar": "Arabic",
+            "he": "Hebrew",
+            "th": "Thai",
+            "en": "English",
+            "ru": "Russian",
+        }
+        target_name = lang_names.get(target_lang, target_lang)
+        native_name = lang_names.get(native_lang, native_lang)
+
+        # Для не-латинских языков — запрашиваем иероглифы ОТДЕЛЬНО
+        if non_latin:
+            system_prompt = (
+                f"You are a native {target_name} speaker. "
+                f"You will receive a list of topics and must provide {target_name} words. "
+                f"Respond ONLY with a JSON object."
+            )
+            user_prompt = (
+                f"Translate these {native_name} words to {target_name} (use {target_name} characters, NOT romaji):\n"
+                f"1. World\n2. Globe\n3. Planet\n4. Earth\n5. Nation\n"
+                f"6. Society\n7. People\n8. Peace\n9. Harmony\n10. Unity\n\n"
+                f"The topic is '{topic}'. Provide the translations in this JSON format:\n"
+                f'{{"words": [\n'
+                f'  {{"term": "世界", "translation": "мир"}},\n'
+                f'  {{"term": "地球", "translation": "земля"}}\n'
+                f"]}}"
+            )
+        else:
+            system_prompt = (
+                f"You are a professional {target_name} language teacher. "
+                f"Respond ONLY with a JSON object."
+            )
+            user_prompt = (
+                f"Create a list of {count} basic {target_name} words about the topic '{topic}'. "
+                f"For each word, provide the word in {target_name} and its translation in {native_name}.\n\n"
+                f"Respond in this exact JSON format:\n"
+                f'{{"words": [\n'
+                f'  {{"term": "word", "translation": "перевод"}}\n'
+                f"]}}"
+            )
 
         try:
             response = self.client.chat.completions.create(
@@ -396,7 +426,7 @@ class LLMGeneratorService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                temperature=0.7,
+                temperature=0.3,  # Ниже для точности перевода
                 max_tokens=2000,
             )
 
@@ -406,53 +436,81 @@ class LLMGeneratorService:
             if not raw_content:
                 raise ValueError("API вернул пустой ответ")
 
-            if "```json" in raw_content:
-                raw_content = raw_content.split("```json")[1].split("```")[0]
-            elif "```" in raw_content:
-                raw_content = raw_content.split("```")[1].split("```")[0]
+            # Извлекаем JSON
+            json_str = raw_content.strip()
+            if "```json" in json_str:
+                json_str = json_str.split("```json")[1].split("```")[0]
+            elif "```" in json_str:
+                json_str = json_str.split("```")[1].split("```")[0]
+            json_str = json_str.strip()
 
-            raw_content = raw_content.strip()
+            # Обрезаем до первого { и последнего }
+            if "{" in json_str:
+                json_str = json_str[json_str.index("{") :]
+            if "}" in json_str:
+                json_str = json_str[: json_str.rindex("}") + 1]
 
-            data = json.loads(raw_content)
+            data = json.loads(json_str)
             cards = data.get("words", [])
 
-            if not cards:
-                if isinstance(data, list):
-                    cards = data
-                elif "cards" in data:
-                    cards = data["cards"]
+            if not cards and isinstance(data, list):
+                cards = data
 
             print(f"DEBUG PARSED CARDS: {len(cards)} cards")
 
             tokens = response.usage.total_tokens if response.usage else 0
-            self._log_generation(topic, raw_content, True, tokens)
+            self._log_generation(topic, json_str, True, tokens)
 
             result = []
             for card in cards[:count]:
-                term = card.get("term") or card.get("word") or ""
-                translation = card.get("translation") or card.get("meaning") or ""
+                # Ищем term
+                term = ""
+                for key in [
+                    "term",
+                    "word",
+                    "original",
+                    "native",
+                    "target",
+                    "character",
+                ]:
+                    val = card.get(key, "")
+                    if val and str(val).strip():
+                        term = str(val).strip()
+                        break
 
-                if not term or not translation:
+                # Ищем translation
+                translation = ""
+                for key in ["translation", "meaning", "definition", "translate"]:
+                    val = card.get(key, "")
+                    if val and str(val).strip():
+                        translation = str(val).strip()
+                        break
+
+                if not term:
+                    print(f"DEBUG SKIPPED (empty term): card={card}")
+                    continue
+                if not translation:
+                    print(f"DEBUG SKIPPED (empty translation): card={card}")
                     continue
 
                 result.append(
                     {
-                        "term": term.strip(),
-                        "translation": translation.strip(),
+                        "term": term,
+                        "translation": translation,
                         "part_of_speech": card.get("part_of_speech", ""),
                         "example": card.get("example", ""),
                         "tokens_used": tokens // len(cards) if cards else 0,
                     }
                 )
 
-            # Если результат меньше запрошенного, возвращаем что есть (без fallback)
             print(f"DEBUG FINAL RESULT: {len(result)} cards")
             return result
 
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error: {e}")
+            return []
         except Exception as e:
             logger.error(f"AI Error: {e}")
-            self._log_generation(topic, str(e), False)
-            # Возвращаем пустой список вместо fallback-карточек
             return []
 
     def _generate_fallback_cards(self, topic: str, count: int) -> List[Dict[str, Any]]:

@@ -107,9 +107,17 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Прогресс-бар
-    var progressFill = document.getElementById('progress-fill');
-    if (progressFill && totalCards > 0) {
-        progressFill.style.width = (1 / totalCards * 100) + '%';
-    }
+var progressFill = document.getElementById('progress-fill');
+if (progressFill) {
+    var totalCards = parseInt(container.dataset.totalCards) || 1;
+    var currentNum = parseInt(container.dataset.currentNumber) || 1;
+    var percent = Math.round((currentNum / totalCards) * 100);
+    progressFill.style.width = percent + '%';
+}
+
+// Обновляем номер карточки
+var cardNumSpan = document.getElementById('current-card-num');
+if (cardNumSpan) {
+    cardNumSpan.textContent = container.dataset.currentNumber || '1';
+}
 });
