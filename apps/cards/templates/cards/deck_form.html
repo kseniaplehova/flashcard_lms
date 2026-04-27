@@ -4,121 +4,117 @@
 
 {% block content %}
 <style>
-    .form-container { max-width: 600px; margin: 0 auto; padding: 2rem 1rem; }
-    .form-card { background: white; border-radius: 24px; padding: 2.5rem; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
-    .form-card h2 { text-align: center; font-size: 1.8rem; margin-bottom: 2rem; }
-    .visibility-group { margin: 1.5rem 0; }
-    .visibility-group > label { font-weight: 600; color: #2c3e50; margin-bottom: 0.8rem; display: block; }
-    .radio-options { display: flex; gap: 1.5rem; }
+    .form-page { max-width: 560px; margin: 0 auto; }
+    .form-card {
+        background: white; border-radius: 20px; padding: 2rem;
+        border: 1px solid #f1f5f9; transition: box-shadow 0.3s;
+    }
+    .form-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+    .form-card h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; text-align: center; }
+    
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .form-group input, .form-group textarea, .form-group select {
+        width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-size: 0.95rem; transition: border-color 0.2s; font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+        outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+    .help-text { font-size: 0.8rem; color: #94a3b8; margin-top: 0.2rem; }
+    .errorlist { list-style: none; padding: 0; color: #ef4444; font-size: 0.8rem; }
+    
+    .visibility-group { margin: 1.2rem 0; }
+    .visibility-group > label { font-weight: 600; color: #1e293b; margin-bottom: 0.6rem; display: block; }
+    .radio-options { display: flex; gap: 1rem; }
     .radio-option { flex: 1; cursor: pointer; }
     .radio-option input[type="radio"] { display: none; }
-    .radio-option-content { display: flex; flex-direction: column; align-items: center; padding: 1.2rem; border: 2px solid #e9ecef; border-radius: 16px; transition: all 0.2s; text-align: center; }
-    .radio-option input[type="radio"]:checked + .radio-option-content { border-color: #4facfe; background: #f0f9ff; }
-    .radio-option.public input[type="radio"]:checked + .radio-option-content { border-color: #27ae60; background: #d5f5e3; }
-    .radio-option.private input[type="radio"]:checked + .radio-option-content { border-color: #95a5a6; background: #f0f0f0; }
-    .radio-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-    .radio-title { font-weight: 600; margin-bottom: 0.2rem; }
-    .radio-desc { font-size: 0.8rem; color: #666; }
-    .form-actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
-    .form-actions .btn { flex: 1; min-width: 150px; }
-    .section-divider { border: none; border-top: 2px solid #f0f0f0; margin: 1.5rem 0; }
-    .create-options { display: flex; gap: 1rem; flex-wrap: wrap; }
-    .create-options .btn { flex: 1; min-width: auto; }
-    .admin-note { margin-top: 1.5rem; padding: 1rem; background: #fef9e7; border-radius: 12px; color: #e67e22; text-align: center; font-size: 0.9rem; }
-    @media (max-width: 500px) { .form-card { padding: 1.5rem; } .radio-options { flex-direction: column; } .form-actions { flex-direction: column; } }
-    @media (max-width: 600px) {
-    .form-container {
-        padding: 1rem 0.5rem;
-    }
-    .form-card {
-        padding: 1.2rem;
-        border-radius: 16px;
-    }
-    .form-card h2 {
-        font-size: 1.3rem;
-        margin-bottom: 1.2rem;
-    }
-    .radio-options {
-        flex-direction: column;
-        gap: 0.6rem;
-    }
     .radio-option-content {
-        padding: 0.8rem;
+        display: flex; flex-direction: column; align-items: center; padding: 1rem;
+        border: 2px solid #e2e8f0; border-radius: 14px; transition: all 0.2s; text-align: center;
     }
-    .form-actions {
-        flex-direction: column;
+    .radio-option input[type="radio"]:checked + .radio-option-content { border-color: #6366f1; background: #eef2ff; }
+    .radio-title { font-weight: 600; font-size: 0.9rem; }
+    .radio-desc { font-size: 0.75rem; color: #94a3b8; }
+    
+    .form-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+    .form-actions .btn { flex: 1; }
+    
+    .section-divider { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+    .sub-section h3 { font-size: 1rem; font-weight: 600; color: #1e293b; text-align: center; margin-bottom: 0.5rem; }
+    .sub-section p { text-align: center; color: #94a3b8; font-size: 0.85rem; }
+    .create-options { display: flex; gap: 0.8rem; margin-top: 1rem; }
+    .create-options .btn { flex: 1; }
+    
+    @media (max-width: 500px) {
+        .form-card { padding: 1.2rem; }
+        .radio-options { flex-direction: column; }
+        .form-actions { flex-direction: column; }
     }
-    .form-actions .btn {
-        min-width: 100%;
-    }
-    .create-options {
-        flex-direction: column;
-    }
-}
 </style>
 
-<div class="form-container">
+<div class="form-page">
     <div class="form-card">
-        <h2>{% if deck %}Редактировать колоду{% else %}🎯 Создать новую колоду{% endif %}</h2>
-        <form method="post" id="deck-form">
+        <h2>{% if deck %}Редактировать колоду{% else %}Новая колода{% endif %}</h2>
+        <form method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label for="{{ form.name.id_for_label }}">Название колоды</label>
+                <label for="{{ form.name.id_for_label }}">Название</label>
                 {{ form.name }}
                 {% if form.name.errors %}<ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-                <div class="help-text">Например: "Английские слова", "Испанский для путешествий"</div>
             </div>
             <div class="form-group">
-                <label for="{{ form.description.id_for_label }}">Описание (необязательно)</label>
+                <label for="{{ form.description.id_for_label }}">Описание</label>
                 {{ form.description }}
                 {% if form.description.errors %}<ul class="errorlist">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-                <div class="help-text">Кратко опишите, что в этой колоде</div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
                 <div class="form-group">
                     <label for="{{ form.target_language.id_for_label }}">Язык изучения</label>
                     {{ form.target_language }}
-                    {% if form.target_language.errors %}<ul class="errorlist">{% for error in form.target_language.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-                    <div class="help-text">Например: en, es, fr</div>
                 </div>
                 <div class="form-group">
                     <label for="{{ form.native_language.id_for_label }}">Родной язык</label>
                     {{ form.native_language }}
-                    {% if form.native_language.errors %}<ul class="errorlist">{% for error in form.native_language.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-                    <div class="help-text">Например: ru, uk, by</div>
                 </div>
             </div>
-            {% if user.is_staff %}
-                <div class="visibility-group">
-                    <label>Видимость колоды</label>
-                    <div class="radio-options">
-                        <label class="radio-option private">
-                            <input type="radio" name="visibility" value="private" {% if not deck or deck.visibility == 'private' %}checked{% endif %}>
-                            <div class="radio-option-content"><span class="radio-icon"></span><span class="radio-title">Приватная</span><span class="radio-desc">Только вы</span></div>
-                        </label>
-                        <label class="radio-option public">
-                            <input type="radio" name="visibility" value="public" {% if deck and deck.visibility == 'public' %}checked{% endif %}>
-                            <div class="radio-option-content"><span class="radio-icon"></span><span class="radio-title">Публичная</span><span class="radio-desc">Видна всем</span></div>
-                        </label>
-                    </div>
-                    {% if form.visibility.errors %}<ul class="errorlist">{% for error in form.visibility.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            
+            <div class="visibility-group">
+                <label>Видимость</label>
+                <div class="radio-options">
+                    <label class="radio-option">
+                        <input type="radio" name="visibility" value="private" {% if not deck or deck.visibility == 'private' %}checked{% endif %}>
+                        <div class="radio-option-content">
+                            <span class="radio-title">Приватная</span>
+                            <span class="radio-desc">Только вы</span>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="visibility" value="public" {% if deck and deck.visibility == 'public' %}checked{% endif %}>
+                        <div class="radio-option-content">
+                            <span class="radio-title">Публичная</span>
+                            <span class="radio-desc">Видна всем</span>
+                        </div>
+                    </label>
                 </div>
-            {% else %}
-                <input type="hidden" name="visibility" value="private">
-            {% endif %}
+            </div>
+            
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">{% if deck %}Сохранить{% else %}Создать колоду{% endif %}</button>
-                <a href="{% url 'cards:deck_list' %}" class="btn btn-secondary">Отмена</a>
+                <a href="{% url 'cards:deck_list' %}" class="btn btn-outline">Отмена</a>
             </div>
         </form>
+        
         {% if deck %}
-            <hr class="section-divider">
-            <h3 style="text-align: center; color: #2c3e50; margin-bottom: 1rem;">Генерация карточек</h3>
-            <p style="text-align: center; color: #666; margin-bottom: 1rem; font-size: 0.9rem;">Создайте карточки автоматически с помощью ИИ</p>
+        <hr class="section-divider">
+        <div class="sub-section">
+            <h3>Добавление карточек</h3>
+            <p>Наполните колоду словами с помощью ИИ или вручную</p>
             <div class="create-options">
-                <a href="{% url 'cards:card_create' deck.pk %}" class="btn btn-primary">Добавить одну карточку</a>
-                <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn btn-ai">Сгенерировать по теме</a>
+                <a href="{% url 'cards:card_create' deck.pk %}" class="btn btn-outline">Вручную</a>
+                <a href="{% url 'cards:card_bulk_create' deck.pk %}" class="btn btn-primary">Сгенерировать по теме</a>
             </div>
+        </div>
         {% endif %}
     </div>
 </div>

@@ -5,112 +5,174 @@
 
 {% block content %}
 <style>
-    .public-container { max-width: 1000px; margin: 0 auto; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-    .page-header h1 { margin: 0; }
-    .decks-grid { display: grid; gap: 1.2rem; }
-    .deck-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #f0f0f0; }
-    .deck-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
-    .deck-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; flex-wrap: wrap; }
-    .deck-name { font-size: 1.4rem; font-weight: 700; color: #2c3e50; }
-    .deck-name:hover { color: #3498db; }
-    .owner-info { color: #666; font-size: 0.9rem; margin-bottom: 0.8rem; }
-    .deck-description { color: #666; margin-bottom: 1rem; line-height: 1.5; }
-    .deck-meta { display: flex; gap: 1.5rem; margin-bottom: 1.2rem; font-size: 0.85rem; color: #888; flex-wrap: wrap; }
-    .deck-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .ranking-badge { position: absolute; top: -10px; left: -10px; width: 35px; height: 35px; background: linear-gradient(135deg, #f39c12, #e74c3c); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
-    .deck-card-wrapper { position: relative; }
-    .top-1 .ranking-badge { background: linear-gradient(135deg, #f1c40f, #f39c12); width: 40px; height: 40px; font-size: 1.1rem; }
-    .top-2 .ranking-badge { background: linear-gradient(135deg, #bdc3c7, #95a5a6); }
-    .top-3 .ranking-badge { background: linear-gradient(135deg, #e67e22, #d35400); }
+    .public-container { width: 100%; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem; }
+    .section-head h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+    .section-head .subtitle { color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem; }
     
-    /* Стили для кнопки лайка */
-    .like-btn {
-        background: none;
-        border: 2px solid #e9ecef;
-        border-radius: 30px;
-        padding: 0.4rem 0.9rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        font-size: 0.95rem;
-        color: #666;
-        margin-left: auto;
+    .language-section { margin-bottom: 2.5rem; }
+    .language-header {
+        display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;
+        padding-bottom: 0.6rem; border-bottom: 1px solid #e2e8f0;
     }
-    .like-btn:hover { border-color: #ff6b6b; background: #fff5f5; }
-    .like-btn.liked { border-color: #ff6b6b; background: #ffe0e0; color: #e74c3c; }
-    .like-btn.liked .heart-icon { animation: pulse 0.3s ease; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    .language-flag {
+        width: 32px; height: 32px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.9rem; color: white;
+    }
+    .language-name { font-weight: 600; color: #1e293b; font-size: 1.1rem; }
+    .language-count { color: #94a3b8; font-size: 0.85rem; }
     
-    @media (max-width: 600px) { .deck-header { flex-direction: column; align-items: flex-start; } }
-    @media (max-width: 600px) {
-    .public-container { padding: 0.5rem; }
-    .page-header { flex-direction: column; }
-    .page-header .btn { width: 100%; text-align: center; }
-    .deck-card { padding: 1.2rem; }
-    .deck-header { flex-direction: column; align-items: flex-start; }
-    .like-btn { margin-left: 0; }
-    .deck-actions { flex-direction: column; }
-    .deck-actions .btn, .deck-actions form { width: 100%; }
-    .deck-actions button { width: 100%; }
-    .ranking-badge { width: 28px; height: 28px; font-size: 0.75rem; top: -8px; left: -8px; }
+    .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    
+    .deck-card {
+        background: white; border-radius: 20px; padding: 1.4rem; position: relative; overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f1f5f9;
+        animation: fadeInUp 0.5s ease forwards; opacity: 0;
+    }
+    .deck-card:nth-child(1) { animation-delay: 0s; }
+    .deck-card:nth-child(2) { animation-delay: 0.07s; }
+    .deck-card:nth-child(3) { animation-delay: 0.14s; }
+    .deck-card:nth-child(4) { animation-delay: 0.21s; }
+    .deck-card:nth-child(5) { animation-delay: 0.28s; }
+    .deck-card:nth-child(6) { animation-delay: 0.35s; }
+    
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .deck-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        transform: scaleX(0); transform-origin: left;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .deck-card:hover::before { transform: scaleX(1); }
+    .deck-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(99,102,241,0.2); border-color: #e2e8f0; }
+    .deck-card.top-1 { border-color: rgba(245,158,11,0.3); }
+    .deck-card.top-2 { border-color: rgba(148,163,184,0.3); }
+    .deck-card.top-3 { border-color: rgba(180,83,9,0.3); }
+    
+    .rank-badge {
+        position: absolute; top: 1rem; right: 1rem; width: 28px; height: 28px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.75rem; color: white; z-index: 2;
+    }
+    .top-1 .rank-badge { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .top-2 .rank-badge { background: linear-gradient(135deg, #94a3b8, #64748b); }
+    .top-3 .rank-badge { background: linear-gradient(135deg, #b45309, #92400e); }
+    
+    .deck-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; padding-right: 2rem; }
+    .deck-card-title { font-weight: 650; font-size: 1.1rem; color: #1e293b; }
+    .deck-card-title:hover { color: #6366f1; }
+    .owner-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; }
+    .owner-avatar {
+        width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+    }
+    .owner-name { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+    .deck-card-desc { font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem; line-height: 1.4; }
+    .deck-card-tags { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; flex-wrap: wrap; }
+    .tag { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 15px; background: #f1f5f9; color: #64748b; font-weight: 500; }
+    .lang-tag {
+        font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 15px; color: white; font-weight: 600;
+    }
+    
+    .deck-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.8rem; border-top: 1px solid #f1f5f9; gap: 0.5rem; flex-wrap: wrap; }
+    .like-btn {
+        background: none; border: 1.5px solid #e2e8f0; border-radius: 25px;
+        padding: 0.4rem 0.9rem; cursor: pointer; transition: all 0.25s;
+        display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: #94a3b8; font-weight: 500;
+    }
+    .like-btn:hover { border-color: #fecaca; background: #fff5f5; color: #ef4444; }
+    .like-btn.liked { border-color: #fecaca; background: #fef2f2; color: #ef4444; }
+    .like-btn .heart-icon {
+    pointer-events: none;  /* ← ВАЖНО! */
+    transition: transform 0.2s;
+    font-size: 1rem;
+}
+    .like-btn.liked .heart-icon { animation: heartBeat 0.4s ease; }
+    @keyframes heartBeat {
+        0% { transform: scale(1); } 30% { transform: scale(1.3); } 50% { transform: scale(1.1); }
+        70% { transform: scale(1.3); } 100% { transform: scale(1); }
+    }
+    .deck-card-actions { display: flex; gap: 0.4rem; align-items: center; }
+    .btn-action { padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; border: none; cursor: pointer; font-family: inherit; }
+    .btn-study-action { background: #6366f1; color: white; }
+    .btn-study-action:hover { background: #4f46e5; }
+    .btn-save-action { background: #f1f5f9; color: #64748b; }
+    .btn-save-action:hover { background: #e2e8f0; color: #1e293b; }
+    .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 24px; border: 2px dashed #e2e8f0; }
+    .empty-state h3 { font-size: 1.3rem; color: #1e293b; }
+    .empty-state p { color: #94a3b8; margin-bottom: 1.5rem; }
+    
+    @media (max-width: 600px) { .deck-grid { grid-template-columns: 1fr; } }
+    .like-btn .heart-icon {
+    pointer-events: none;
 }
 </style>
 
 <div class="public-container">
-    <div class="page-header">
-        <h1>Публичные колоды</h1>
-        <a href="{% url 'cards:deck_create' %}" class="btn btn-primary">Создать свою колоду</a>
+    <div class="section-head">
+        <div>
+            <h1>Публичные колоды</h1>
+            <p class="subtitle">Колоды других пользователей, отсортированы по популярности</p>
+        </div>
+        <a href="{% url 'cards:deck_create' %}" class="btn btn-primary">Создать свою</a>
     </div>
     
-    {% if decks %}
-        <p class="text-muted mb-2">Колоды, которыми поделились другие пользователи. Отсортированы по популярности.</p>
-        <div class="decks-grid">
-            {% for deck in decks %}
-            <div class="deck-card-wrapper {% if forloop.counter == 1 %}top-1{% elif forloop.counter == 2 %}top-2{% elif forloop.counter == 3 %}top-3{% endif %}">
-                {% if forloop.counter <= 3 %}<div class="ranking-badge">{{ forloop.counter }}</div>{% endif %}
-                <div class="deck-card">
-                    <div class="deck-header">
-                        <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-name">{{ deck.name }}</a>
-                        <span class="badge badge-success">Публичная</span>
+    {% if language_groups %}
+        {% for lang, lang_decks in language_groups.items %}
+        <div class="language-section">
+            <div class="language-header">
+                <div class="language-flag" data-lang="{{ lang }}">{{ lang|upper }}</div>
+                <span class="language-name">
+                    {% if lang == 'en' %}Английский{% elif lang == 'es' %}Испанский{% elif lang == 'fr' %}Французский{% elif lang == 'de' %}Немецкий{% elif lang == 'it' %}Итальянский{% else %}{{ lang|upper }}{% endif %}
+                </span>
+                <span class="language-count">{{ lang_decks|length }} колод</span>
+            </div>
+            <div class="deck-grid">
+                {% for deck in lang_decks %}
+                <div class="deck-card {% if forloop.counter <= 3 and loop.first %}top-{{ forloop.counter }}{% endif %}">
+                    <div class="deck-card-header">
+                        <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-card-title">{{ deck.name }}</a>
+                    </div>
+                    <div class="owner-row">
+                        <div class="owner-avatar">{{ deck.owner.username|slice:":1"|upper }}</div>
+                        <span class="owner-name">{{ deck.owner.username }}</span>
+                    </div>
+                    <p class="deck-card-desc">{{ deck.description|default:"Без описания" }}</p>
+                    <div class="deck-card-tags">
+                        <span class="lang-tag" data-lang="{{ deck.target_language|lower }}">{{ deck.target_language|upper }}</span>
+                        <span class="tag">{{ deck.flashcard_set.count }} карточек</span>
+                    </div>
+                    <div class="deck-card-footer">
                         <button class="like-btn {% if user in deck.likes.all %}liked{% endif %}" 
-        data-deck-id="{{ deck.pk }}"
-        data-liked="{% if user in deck.likes.all %}true{% else %}false{% endif %}">
-    <span class="heart-icon">❤️</span>
-    <span class="likes-count">{{ deck.likes_count|default:0 }}</span>
-</button>
-                    </div>
-                    <p class="owner-info">Создатель: <strong>{{ deck.owner.username }}</strong></p>
-                    <p class="deck-description">{{ deck.description|default:"Нет описания" }}</p>
-                    <div class="deck-meta">
-                        <span>{{ deck.target_language|upper }} → {{ deck.native_language|upper }}</span>
-                        <span>{{ deck.flashcard_set.count }} карточек</span>
-                        <span>{{ deck.created_at|date:"d.m.Y" }}</span>
-                    </div>
-                    <div class="deck-actions">
-                        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">Просмотр</a>
-                        <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">Учить</a>
-                        <form method="post" action="{% url 'cards:copy_deck' deck.pk %}" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary">Сохранить себе</button>
-                        </form>
+                                data-deck-id="{{ deck.pk }}"
+                                data-liked="{% if user in deck.likes.all %}true{% else %}false{% endif %}">
+                            <span class="heart-icon">&#10084;</span>
+                            <span class="likes-count">{{ deck.likes_count|default:0 }}</span>
+                        </button>
+                        <div class="deck-card-actions">
+                            <a href="{% url 'cards:study_session' deck.pk %}" class="btn-action btn-study-action">Учить</a>
+                            <form method="post" action="{% url 'cards:copy_deck' deck.pk %}" style="display:inline;">
+                                {% csrf_token %}<button type="submit" class="btn-action btn-save-action">Сохранить</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     {% else %}
         <div class="empty-state">
-            <div class="empty-state-icon">📭</div>
-            <h3>Пока нет публичных колод</h3>
-            <p>Станьте первым, кто поделится своей колодой!</p>
-            <a href="{% url 'cards:deck_create' %}" class="btn btn-primary btn-large">➕ Создать колоду</a>
+            <h3>Пока пусто</h3>
+            <p>Никто еще не создал публичную колоду.</p>
+            <a href="{% url 'cards:deck_create' %}" class="btn btn-primary btn-large">Создать колоду</a>
         </div>
     {% endif %}
 </div>
 
 <form id="csrf-form" style="display: none;">{% csrf_token %}</form>
-<script src="{% static 'cards/js/public_decks.js' %}"></script>
+<script src="{% static 'cards/js/public_decks.js' %}?v=3"></script>
+<script src="{% static 'cards/js/language_colors.js' %}"></script>
 {% endblock %}

@@ -1,7 +1,7 @@
 from typing import Any
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import QuerySet, Count, Q
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     ListView,
     CreateView,
@@ -19,28 +19,34 @@ from apps.cards.models import Deck, Flashcard
 from django.shortcuts import get_object_or_404, redirect
 from apps.cards.services.statistics import DeckProgressAggregator
 from core.mixins import DeckAccessMixin, OwnerOrStaffMixin
+from collections import defaultdict
+
 
 class ToggleLikeView(LoginRequiredMixin, View):
     """Поставить/убрать лайк с колоды."""
-    
+
     def post(self, request, deck_pk):
         deck = get_object_or_404(Deck, pk=deck_pk)
-        
+
         if deck.owner == request.user:
-            return JsonResponse({'success': False, 'error': 'Нельзя лайкнуть свою колоду'}, status=400)
-        
-        if request.user in deck.likes.all():  # type: ignore[attr-defined]
-            deck.likes.remove(request.user)  # type: ignore[attr-defined]
+            return JsonResponse(
+                {"success": False, "error": "Нельзя лайкнуть свою колоду"}, status=400
+            )
+
+        if request.user in deck.likes.all():
+            deck.likes.remove(request.user)
             liked = False
         else:
-            deck.likes.add(request.user)  # type: ignore[attr-defined]
+            deck.likes.add(request.user)
             liked = True
-        
-        return JsonResponse({
-            'success': True,
-            'liked': liked,
-            'likes_count': deck.likes.count()  # type: ignore[attr-defined]
-        })
+
+        return JsonResponse(
+            {
+                "success": True,
+                "liked": liked,
+                "likes_count": deck.likes.count(),
+            }
+        )
 
 
 class CopyDeckView(LoginRequiredMixin, View):
@@ -97,23 +103,37 @@ class CopyDeckView(LoginRequiredMixin, View):
 
 class PublicDeckListView(LoginRequiredMixin, ListView):
     """Публичные колоды, доступные всем пользователям."""
+
     model = Deck
-    template_name = 'cards/public_decks.html'
-    context_object_name = 'decks'
-    
+    template_name = "cards/public_decks.html"
+    context_object_name = "decks"
+
     def get_queryset(self) -> QuerySet[Deck]:
-        return Deck.objects.filter(visibility='public').annotate(
-            likes_count=Count('likes')  # type: ignore[attr-defined]
-        ).order_by('-likes_count', '-created_at').prefetch_related('flashcard_set', 'owner')  # type: ignore[attr-defined]
-    
+        user = self.request.user
+        return (
+            Deck.objects.filter(visibility="public")
+            .exclude(owner=user)
+            .annotate(likes_count=Count("likes"))
+            .order_by("-likes_count", "-created_at")
+            .prefetch_related("flashcard_set", "owner")
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['is_staff'] = self.request.user.is_staff
+        context["is_staff"] = self.request.user.is_staff
+
+        # Группировка по языкам
+        language_groups = defaultdict(list)
+        for deck in context["decks"]:
+            lang = deck.target_language.lower()
+            language_groups[lang].append(deck)
+        context["language_groups"] = dict(sorted(language_groups.items()))
+
         return context
 
 
 class DeckListView(LoginRequiredMixin, ListView):
-    """Список доступных колод (свои + публичные)."""
+    """Список своих колод."""
 
     model = Deck
     template_name = "cards/deck_list.html"
@@ -121,25 +141,61 @@ class DeckListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self) -> QuerySet[Deck]:
         user = self.request.user
-        # Свои колоды + публичные колоды других пользователей
-        return (Deck.objects.filter(owner=user) | Deck.objects.filter(visibility="public").exclude(owner=user)).distinct().prefetch_related("flashcard_set")  # type: ignore[attr-defined]
+        return Deck.objects.filter(owner=user).prefetch_related("flashcard_set")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_staff"] = self.request.user.is_staff
         return context
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_staff"] = self.request.user.is_staff
+        context["current_lang"] = self.request.GET.get("lang", "")
+
+        # Уникальные языки, отсортированные
+        user = self.request.user
+        languages = (
+            (
+                Deck.objects.filter(owner=user)
+                | Deck.objects.filter(visibility="public").exclude(owner=user)
+            )
+            .values_list("target_language", flat=True)
+            .distinct()
+            .order_by("target_language")
+        )
+        context["available_languages"] = languages
+
+        return context
+
 
 class DeckCreateView(LoginRequiredMixin, CreateView):
-    """Создание новой колоды (все пользователи могут выбирать видимость)."""
+    """Создание новой колоды."""
 
     model = Deck
     template_name = "cards/deck_form.html"
-    success_url = reverse_lazy("cards:deck_list")
+
+    LANGUAGE_CHOICES = [
+        ("en", "English"),
+        ("es", "Español"),
+        ("fr", "Français"),
+        ("de", "Deutsch"),
+        ("it", "Italiano"),
+        ("pt", "Português"),
+        ("ja", "日本語"),
+        ("ko", "한국어"),
+        ("zh", "中文"),
+        ("ru", "Русский"),
+    ]
 
     def get_form_class(self):
-        # ВСЕ пользователи могут выбирать видимость
         class UniversalDeckForm(forms.ModelForm):
+            target_language = forms.ChoiceField(
+                choices=self.LANGUAGE_CHOICES, label="Язык изучения", initial="en"
+            )
+            native_language = forms.ChoiceField(
+                choices=self.LANGUAGE_CHOICES, label="Родной язык", initial="ru"
+            )
             visibility = forms.ChoiceField(
                 choices=Deck.VISIBILITY_CHOICES,
                 widget=forms.RadioSelect,
@@ -161,7 +217,16 @@ class DeckCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form: Any) -> HttpResponse:
         form.instance.owner = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f"Колода «{self.object.name}» создана! Теперь добавьте карточки.",
+        )
+        return response
+
+    def get_success_url(self) -> str:
+        # После создания перенаправляем на страницу редактирования (где кнопки генерации)
+        return reverse("cards:deck_update", kwargs={"pk": self.object.pk})
 
 
 class DeckDetailView(LoginRequiredMixin, DeckAccessMixin, DetailView):
@@ -194,8 +259,29 @@ class DeckUpdateView(LoginRequiredMixin, OwnerOrStaffMixin, UpdateView):
     template_name = "cards/deck_form.html"
     success_url = reverse_lazy("cards:deck_list")
 
+    LANGUAGE_CHOICES = [
+        ("en", "English"),
+        ("es", "Español"),
+        ("fr", "Français"),
+        ("de", "Deutsch"),
+        ("it", "Italiano"),
+        ("pt", "Português"),
+        ("ja", "日本語"),
+        ("ko", "한국어"),
+        ("zh", "中文"),
+        ("ru", "Русский"),
+    ]
+
     def get_form_class(self):
         class UniversalDeckForm(forms.ModelForm):
+            target_language = forms.ChoiceField(
+                choices=self.LANGUAGE_CHOICES,
+                label="Язык изучения",
+            )
+            native_language = forms.ChoiceField(
+                choices=self.LANGUAGE_CHOICES,
+                label="Родной язык",
+            )
             visibility = forms.ChoiceField(
                 choices=Deck.VISIBILITY_CHOICES,
                 widget=forms.RadioSelect,

@@ -5,288 +5,87 @@
 
 {% block content %}
 <style>
-    /* Стили для страницы результатов */
-    .results-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
+    .results-page { max-width: 800px; margin: 0 auto; }
+    .results-page h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 2rem; }
     
-    h1 {
-        color: #2c3e50;
-        margin-bottom: 2rem;
-        text-align: center;
-        font-size: 2rem;
-    }
-    
-    .stats-summary {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
+    .stats-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; }
     .stat-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem 1rem;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        transition: transform 0.2s;
+        flex: 1; background: white; border-radius: 16px; padding: 1.4rem;
+        text-align: center; border: 1px solid #f1f5f9; transition: box-shadow 0.2s;
     }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #1e293b; }
+    .stat-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.2rem; }
+    .stat-mastered .stat-value { color: #10b981; }
+    .stat-struggling .stat-value { color: #ef4444; }
+    .stat-total .stat-value { color: #6366f1; }
     
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-    }
+    .progress-section { background: white; border-radius: 16px; padding: 1.2rem 1.5rem; margin-bottom: 2rem; border: 1px solid #f1f5f9; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; font-weight: 500; }
+    .progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 4px; transition: width 0.5s ease; }
     
-    .stat-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-value {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #2c3e50;
-    }
-    
-    .stat-label {
-        color: #666;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 0.3rem;
-    }
-    
-    .stat-card.mastered .stat-value { color: #27ae60; }
-    .stat-card.struggling .stat-value { color: #e74c3c; }
-    .stat-card.total .stat-value { color: #3498db; }
-    
-    .overall-progress {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    }
-    
-    .progress-label {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.75rem;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-    
-    .progress-bar {
-        height: 14px;
-        background: #ecf0f1;
-        border-radius: 7px;
-        overflow: hidden;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        border-radius: 7px;
-        transition: width 0.5s ease;
-    }
-    
-    .cards-section {
-        margin-bottom: 2rem;
-    }
-    
-    .cards-section h2 {
-        color: #2c3e50;
-        margin-bottom: 1.2rem;
-        font-size: 1.4rem;
-    }
-    
-    .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1rem;
-    }
-    
+    .cards-section { margin-bottom: 1.5rem; }
+    .cards-section h2 { font-size: 1.05rem; font-weight: 600; color: #1e293b; margin-bottom: 0.8rem; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.7rem; }
     .card-item {
-        background: white;
-        border-radius: 16px;
-        padding: 1.2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-        border-left: 5px solid;
-        transition: transform 0.2s;
-    }
-    
-    .card-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-    
-    .card-item.mastered-item {
-        border-left-color: #27ae60;
-    }
-    
-    .card-item.struggling-item {
-        border-left-color: #e74c3c;
-    }
-    
-    .card-term {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-    }
-    
-    .card-definition {
-        color: #555;
-        margin-bottom: 1rem;
-        font-size: 1rem;
-    }
-    
-    .card-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        font-size: 0.8rem;
-    }
-    
-    .ef-badge {
-        background: #f0f0f0;
-        padding: 0.3rem 0.7rem;
-        border-radius: 20px;
-        color: #666;
-        font-weight: 500;
-    }
-    
-    .correct-badge {
-        background: #d5f5e3;
-        padding: 0.3rem 0.7rem;
-        border-radius: 20px;
-        color: #27ae60;
-        font-weight: 500;
-    }
-    
-    .errors-badge {
-        background: #fadbd8;
-        padding: 0.3rem 0.7rem;
-        border-radius: 20px;
-        color: #e74c3c;
-        font-weight: 500;
-    }
-    
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 2rem;
-        flex-wrap: wrap;
-    }
-    
-    .btn {
-        display: inline-block;
-        padding: 0.9rem 2rem;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 600;
+        background: white; border-radius: 14px; padding: 1rem 1.1rem;
+        border-left: 4px solid #6366f1; border: 1px solid #f1f5f9; border-left: 4px solid #6366f1;
         transition: all 0.2s;
-        text-decoration: none;
-        text-align: center;
     }
+    .card-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .card-item.mastered { border-left-color: #10b981; }
+    .card-item.struggling { border-left-color: #ef4444; }
+    .card-term { font-weight: 700; color: #1e293b; font-size: 1.05rem; }
+    .card-definition { color: #64748b; font-size: 0.9rem; margin: 0.3rem 0; }
+    .card-stats { display: flex; gap: 0.5rem; font-size: 0.75rem; margin-top: 0.5rem; }
+    .pill { padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 500; }
+    .pill-ef { background: #f1f5f9; color: #64748b; }
+    .pill-ok { background: #ecfdf5; color: #10b981; }
+    .pill-err { background: #fef2f2; color: #ef4444; }
     
-    .btn-primary {
-        background: #4facfe;
-        color: white;
-    }
+    .action-row { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
     
-    .btn-primary:hover {
-        background: #3a8fd8;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
-    }
-    
-    .btn-secondary {
-        background: #95a5a6;
-        color: white;
-    }
-    
-    .btn-secondary:hover {
-        background: #7f8c8d;
-        transform: translateY(-2px);
-    }
-    
-    .btn-large {
-        padding: 1.1rem 2.5rem;
-        font-size: 1.1rem;
-    }
-    
-    @media (max-width: 700px) {
-        .stats-summary {
-            grid-template-columns: 1fr;
-        }
-        
-        .cards-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .action-buttons {
-            flex-direction: column;
-        }
-        
-        h1 {
-            font-size: 1.5rem;
-        }
+    @media (max-width: 600px) {
+        .stats-row { flex-direction: column; }
+        .cards-grid { grid-template-columns: 1fr; }
     }
 </style>
 
-<div class="results-container">
-    <h1>{{ deck.name }} — Результаты обучения</h1>
+<div class="results-page">
+    <h1>{{ deck.name }} — Результаты</h1>
     
-    <!-- Общая статистика -->
-    <div class="stats-summary">
-        <div class="stat-card mastered">
-            <div class="stat-icon"></div>
+    <div class="stats-row">
+        <div class="stat-card stat-mastered">
             <div class="stat-value">{{ mastered_count }}</div>
             <div class="stat-label">Освоено</div>
         </div>
-        <div class="stat-card struggling">
-            <div class="stat-icon"></div>
+        <div class="stat-card stat-struggling">
             <div class="stat-value">{{ struggling_count }}</div>
-            <div class="stat-label">Требуют внимания</div>
+            <div class="stat-label">Нужно повторить</div>
         </div>
-        <div class="stat-card total">
-            <div class="stat-icon"></div>
+        <div class="stat-card stat-total">
             <div class="stat-value">{{ total_cards }}</div>
-            <div class="stat-label">Всего карточек</div>
+            <div class="stat-label">Всего</div>
         </div>
     </div>
     
-    <!-- Прогресс-бар -->
-    <div class="overall-progress">
-        <div class="progress-label">
-            <span>Общий прогресс</span>
-            <span id="progress-percent">{{ stats.mastered_percent }}%</span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill" data-width="{{ stats.mastered_percent }}"></div>
-        </div>
+    <div class="progress-section">
+        <div class="progress-label"><span>Прогресс</span><span>{{ stats.mastered_percent }}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" data-width="{{ stats.mastered_percent }}"></div></div>
     </div>
     
-    <!-- Освоенные карточки -->
     {% if mastered_cards %}
     <div class="cards-section">
-        <h2>✅ Освоенные карточки ({{ mastered_count }})</h2>
+        <h2>Освоено ({{ mastered_count }})</h2>
         <div class="cards-grid">
             {% for card in mastered_cards %}
-            <div class="card-item mastered-item">
+            <div class="card-item mastered">
                 <div class="card-term">{{ card.term }}</div>
                 <div class="card-definition">{{ card.definition }}</div>
                 <div class="card-stats">
-                    <span class="ef-badge" title="Фактор легкости">EF: {{ card.easiness_factor }}</span>
-                    <span class="correct-badge">✓ {{ card.consecutive_correct }} раз подряд</span>
+                    <span class="pill pill-ef">EF {{ card.easiness_factor }}</span>
+                    <span class="pill pill-ok">{{ card.consecutive_correct }} подряд</span>
                 </div>
             </div>
             {% endfor %}
@@ -294,18 +93,17 @@
     </div>
     {% endif %}
     
-    <!-- Проблемные карточки -->
     {% if struggling_cards %}
     <div class="cards-section">
         <h2>Требуют повторения ({{ struggling_count }})</h2>
         <div class="cards-grid">
             {% for card in struggling_cards %}
-            <div class="card-item struggling-item">
+            <div class="card-item struggling">
                 <div class="card-term">{{ card.term }}</div>
                 <div class="card-definition">{{ card.definition }}</div>
                 <div class="card-stats">
-                    <span class="ef-badge" title="Фактор легкости">EF: {{ card.easiness_factor }}</span>
-                    <span class="errors-badge">Ошибок: {{ card.total_errors }}</span>
+                    <span class="pill pill-ef">EF {{ card.easiness_factor }}</span>
+                    <span class="pill pill-err">Ошибок {{ card.total_errors }}</span>
                 </div>
             </div>
             {% endfor %}
@@ -313,31 +111,19 @@
     </div>
     {% endif %}
     
-    <!-- Кнопки действий -->
-    <div class="action-buttons">
+    <div class="action-row">
         {% if struggling_cards %}
-        <a href="{% url 'cards:retry_struggling' deck.pk %}" class="btn btn-primary btn-large">
-            🔄 Повторить проблемные карточки
-        </a>
+        <a href="{% url 'cards:retry_struggling' deck.pk %}" class="btn btn-primary">Повторить сложные</a>
         {% endif %}
-        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-secondary">
-            ← Вернуться к колоде
-        </a>
-        <a href="{% url 'cards:dashboard' %}" class="btn btn-secondary">
-            🏠 На главную
-        </a>
+        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">К колоде</a>
+        <a href="{% url 'cards:dashboard' %}" class="btn btn-outline">На главную</a>
     </div>
 </div>
 
 <script>
     (function() {
-        var progressFill = document.getElementById('progress-fill');
-        if (progressFill) {
-            var width = progressFill.getAttribute('data-width');
-            if (width) {
-                progressFill.style.width = width + '%';
-            }
-        }
+        var fill = document.querySelector('.progress-fill');
+        if (fill) { fill.style.width = (fill.dataset.width || 0) + '%'; }
     })();
 </script>
 {% endblock %}

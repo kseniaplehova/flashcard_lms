@@ -4,56 +4,103 @@
 
 {% block content %}
 <style>
-    .deck-detail-container { max-width: 1000px; margin: 0 auto; }
-    .deck-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-    .deck-title-section h1 { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin: 0; }
-    .deck-description { color: #666; margin: 0.5rem 0 1rem; font-size: 1.1rem; }
-    .deck-meta { display: flex; gap: 2rem; color: #888; font-size: 0.9rem; flex-wrap: wrap; }
-    .deck-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
-    .cards-section { margin-top: 2rem; }
-    .card-item.mastered-item { border-left-color: #27ae60; }
-    .card-item.struggling-item { border-left-color: #e74c3c; }
-    @media (max-width: 600px) { .deck-header { flex-direction: column; } }
+    .deck-detail { width: 100%; }
+    
+    .deck-hero {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #f1f5f9;
+    }
+    .deck-hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .deck-hero h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1e293b;
+        letter-spacing: -0.3px;
+    }
+    .deck-hero .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 20px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    .badge-public { background: #dbeafe; color: #3b82f6; }
+    .badge-private { background: #f1f5f9; color: #94a3b8; }
+    .deck-hero-desc { color: #64748b; font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.5; }
+    .deck-hero-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.85rem; color: #94a3b8; }
+    
+    .deck-hero-actions {
+        display: flex; gap: 0.5rem; flex-wrap: wrap;
+        margin-top: 1.2rem; padding-top: 1.2rem; border-top: 1px solid #f1f5f9;
+    }
+    .btn-action {
+        padding: 0.5rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+        border: none; cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-study { background: #6366f1; color: white; }
+    .btn-study:hover { background: #4f46e5; }
+    .btn-save { background: #f1f5f9; color: #64748b; }
+    .btn-save:hover { background: #e2e8f0; color: #1e293b; }
+    .btn-edit { background: none; border: 1px solid #e2e8f0; color: #64748b; }
+    .btn-edit:hover { background: #f8fafc; }
+    
+    .cards-section { margin-top: 1rem; }
+    .cards-section h2 { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.8rem; }
+    .card-item {
+        background: white; border-radius: 16px; padding: 1.2rem;
+        border: 1px solid #f1f5f9; transition: all 0.25s;
+    }
+    .card-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); transform: translateY(-2px); }
+    .card-term { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 0.3rem; }
+    .card-definition { font-size: 0.95rem; color: #64748b; margin-bottom: 0.5rem; }
+    .card-example { font-size: 0.85rem; color: #94a3b8; font-style: italic; padding: 0.6rem; background: #f8fafc; border-radius: 10px; }
+    
+    .empty-state {
+        text-align: center; padding: 3rem 2rem; background: white;
+        border-radius: 20px; border: 2px dashed #e2e8f0; grid-column: 1 / -1;
+    }
+    .empty-state p { color: #94a3b8; margin-bottom: 0.5rem; }
+    
     @media (max-width: 600px) {
-    .deck-detail-container { padding: 0.5rem; }
-    .deck-header { flex-direction: column; }
-    .deck-title-section h1 { font-size: 1.3rem; }
-    .deck-meta { gap: 0.8rem; font-size: 0.8rem; }
-    .deck-actions { width: 100%; }
-    .deck-actions .btn { flex: 1; text-align: center; }
-}
+        .deck-hero { padding: 1.2rem; }
+        .cards-grid { grid-template-columns: 1fr; }
+    }
 </style>
 
-<div class="deck-detail-container">
-    <div class="deck-header">
-        <div class="deck-title-section">
-            <h1>{{ deck.name }}
-                {% if deck.visibility == 'public' %}<span class="badge badge-success">Публичная</span>{% else %}<span class="badge badge-muted">Приватная</span>{% endif %}
-            </h1>
-            {% if deck.description %}<p class="deck-description">{{ deck.description }}</p>{% endif %}
-            <div class="deck-meta">
-                <span>{{ deck.target_language|upper }} → {{ deck.native_language|upper }}</span>
-                <span>{{ flashcards|length }} карточек</span>
-                <span>{{ deck.owner.username }}</span>
-                <span>{{ deck.created_at|date:"d.m.Y" }}</span>
-            </div>
+<div class="deck-detail">
+    <div class="deck-hero">
+        <div class="deck-hero-top">
+            <h1>{{ deck.name }}</h1>
+            <span class="badge {% if deck.visibility == 'public' %}badge-public{% else %}badge-private{% endif %}">{{ deck.visibility|default:"private" }}</span>
         </div>
-        <div class="deck-actions">
-    <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success"Учить</a>
-    
-    {% if not is_owner %}
-        <!-- Кнопка "Сохранить себе" для чужих публичных колод -->
-        <form method="post" action="{% url 'cards:copy_deck' deck.pk %}" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Сохранить себе</button>
-        </form>
-    {% endif %}
-    
-    {% if can_edit %}
-        <a href="{% url 'cards:deck_update' deck.pk %}" class="btn btn-outline">Редактировать</a>
-    {% endif %}
-</div>
+        {% if deck.description %}<p class="deck-hero-desc">{{ deck.description }}</p>{% endif %}
+        <div class="deck-hero-meta">
+            <span>{{ deck.target_language|upper }} → {{ deck.native_language|upper }}</span>
+            <span>{{ flashcards|length }} карточек</span>
+            <span>{{ deck.owner.username }}</span>
+        </div>
+        <div class="deck-hero-actions">
+            <a href="{% url 'cards:study_session' deck.pk %}" class="btn-action btn-study">Учить</a>
+            {% if not is_owner %}
+            <form method="post" action="{% url 'cards:copy_deck' deck.pk %}" style="display:inline;">
+                {% csrf_token %}<button type="submit" class="btn-action btn-save">Сохранить себе</button>
+            </form>
+            {% endif %}
+            {% if can_edit %}<a href="{% url 'cards:deck_update' deck.pk %}" class="btn-action btn-edit">Редактировать</a>{% endif %}
+        </div>
     </div>
+    
     <div class="cards-section">
         {% if flashcards %}<h2>Карточки ({{ flashcards|length }})</h2>{% endif %}
         <div class="cards-grid">
@@ -64,10 +111,9 @@
                 {% if card.example_sentence %}<div class="card-example">{{ card.example_sentence }}</div>{% endif %}
             </div>
             {% empty %}
-            <div class="empty-state" style="grid-column: 1 / -1;">
-                <p>В этой колоде пока нет карточек</p>
-                <p class="text-muted">Перейдите в редактирование, чтобы добавить карточки</p>
-                {% if can_edit %}<a href="{% url 'cards:deck_update' deck.pk %}" class="btn btn-primary mt-2">Редактировать колоду</a>{% endif %}
+            <div class="empty-state">
+                <p>В колоде пока нет карточек</p>
+                {% if can_edit %}<a href="{% url 'cards:deck_update' deck.pk %}" class="btn-action btn-edit">Добавить карточки</a>{% endif %}
             </div>
             {% endfor %}
         </div>

@@ -1,56 +1,53 @@
 {% extends 'base.html' %}
 
-{% block title %}Генерация карточек по теме{% endblock %}
+{% block title %}Генерация карточек{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Генерация карточек по теме</h2>
-    <p>Колода: <strong>{{ deck.name }}</strong> ({{ deck.target_language }} → {{ deck.native_language }})</p>
-    
-    <div class="info-message" style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-        <h3 style="margin-top: 0;">Как это работает</h3>
-        <p>Введите тему (например: "Еда", "Путешествия", "Бизнес"), и ИИ сгенерирует набор карточек 
-        с переводом, частью речи и примерами использования.</p>
-        <p><small>Рекомендуемое количество: 10 карточек за раз.</small></p>
-    </div>
-    
-    <form method="post">
-        {% csrf_token %}
+<style>
+    .form-page { max-width: 500px; margin: 0 auto; }
+    .form-card { background: white; border-radius: 20px; padding: 2rem; border: 1px solid #f1f5f9; }
+    .form-card h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; text-align: center; }
+    .deck-info { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .ai-hint { background: #eef2ff; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; font-size: 0.85rem; color: #6366f1; line-height: 1.5; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .form-group input, .form-group select {
+        width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #6366f1; }
+    .form-actions { display: flex; gap: 0.8rem; margin-top: 1.2rem; }
+    .form-actions .btn { flex: 1; }
+    .warning-note { background: #fef9e7; border-radius: 12px; padding: 0.8rem; margin-top: 1.2rem; font-size: 0.8rem; color: #d97706; }
+</style>
+
+<div class="form-page">
+    <div class="form-card">
+        <h2>Генерация по теме</h2>
+        <p class="deck-info">{{ deck.name }} ({{ deck.target_language }} → {{ deck.native_language }})</p>
         
-        <div style="margin-bottom: 1.5rem;">
-            <label for="id_topic" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
-                Тема для генерации:
-            </label>
-            <input type="text" name="topic" id="id_topic" required 
-                   placeholder="Например: Еда, Путешествия, Технологии"
-                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
-        </div>
+        <div class="ai-hint">Введите тему, и ИИ создаст набор карточек с переводом и примерами. Например: "Еда", "Путешествия", "Технологии".</div>
         
-        <div style="margin-bottom: 1.5rem;">
-            <label for="id_count" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
-                Количество карточек:
-            </label>
-            <select name="count" id="id_count" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
-                <option value="5">5 карточек</option>
-                <option value="10" selected>10 карточек</option>
-                <option value="15">15 карточек</option>
-                <option value="20">20 карточек</option>
-            </select>
-        </div>
-        
-        <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-success" style="flex: 1;">
-                🚀 Сгенерировать карточки
-            </button>
-            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn" style="flex: 1; text-align: center;">
-                Отмена
-            </a>
-        </div>
-    </form>
-    
-    <div style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 8px;">
-        <p style="margin: 0;"><strong>⚠️ Внимание:</strong> Генерация может занять несколько секунд. 
-        Не закрывайте страницу до завершения процесса.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_topic">Тема</label>
+                <input type="text" name="topic" id="id_topic" required placeholder="Еда, Путешествия...">
+            </div>
+            <div class="form-group">
+                <label for="id_count">Количество карточек</label>
+                <select name="count" id="id_count">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сгенерировать</button>
+                <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">Отмена</a>
+            </div>
+        </form>
+        <div class="warning-note">Генерация может занять несколько секунд. Не закрывайте страницу.</div>
     </div>
 </div>
 {% endblock %}

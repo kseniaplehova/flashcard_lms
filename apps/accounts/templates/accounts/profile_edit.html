@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование профиля{% endblock %}
+
+{% block content %}
+<style>
+    .form-page { max-width: 500px; margin: 2rem auto; }
+    .form-card {
+        background: white; border-radius: 16px; padding: 2rem;
+        border: 1px solid #f1f5f9;
+    }
+    .form-card h2 {
+        font-size: 1.3rem; font-weight: 700; color: #1e293b;
+        margin-bottom: 1.5rem; text-align: center;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.9rem;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #1e293b;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+    .help-text {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.3rem 0 0;
+        color: #ef4444;
+        font-size: 0.8rem;
+    }
+    .helptext {
+        display: block;
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+    }
+    .form-actions .btn {
+        flex: 1;
+    }
+    
+    @media (max-width: 500px) {
+        .form-card { padding: 1.2rem; }
+    }
+</style>
+
+<div class="form-page">
+    <div class="form-card">
+        <h2>Редактирование профиля</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <span class="helptext">{{ field.help_text }}</span>
+                {% endif %}
+                {% if field.errors %}
+                <ul class="errorlist">
+                    {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -3,14 +3,30 @@
 {% block title %}Удаление колоды{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Удалить колоду "{{ deck.name }}"?</h2>
-    <p>Это действие нельзя отменить. Все карточки в этой колоде будут удалены.</p>
-    
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Да, удалить</button>
-        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn">Отмена</a>
-    </form>
+<style>
+    .confirm-page { max-width: 460px; margin: 3rem auto; text-align: center; }
+    .confirm-card {
+        background: white; border-radius: 20px; padding: 2.5rem 2rem;
+        border: 1px solid #f1f5f9;
+    }
+    .confirm-card h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 0.8rem; }
+    .confirm-card p { color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .confirm-actions { display: flex; gap: 0.8rem; justify-content: center; }
+    .btn-danger-solid { background: #ef4444; color: white; border: none; }
+    .btn-danger-solid:hover { background: #dc2626; }
+</style>
+
+<div class="confirm-page">
+    <div class="confirm-card">
+        <h2>Удалить "{{ deck.name }}"?</h2>
+        <p>Это действие нельзя отменить. Все карточки будут удалены.</p>
+        <div class="confirm-actions">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger-solid">Удалить</button>
+            </form>
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">Отмена</a>
+        </div>
+    </div>
 </div>
 {% endblock %}

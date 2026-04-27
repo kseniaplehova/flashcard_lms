@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<style>
+    .profile-page { max-width: 1600px; margin: 0 auto; }
+    
+    .profile-header {
+        display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+        background: white; border-radius: 16px; padding: 2rem; border: 1px solid #f1f5f9;
+    }
+    .profile-avatar {
+        width: 80px; height: 80px; border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-size: 2rem; font-weight: 700; flex-shrink: 0;
+    }
+    .profile-info h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .profile-info p { color: #64748b; margin: 0.3rem 0 0; }
+    .profile-info .email { color: #94a3b8; font-size: 0.9rem; }
+    
+    .stats-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: white; border-radius: 14px; padding: 1.2rem;
+        text-align: center; border: 1px solid #f1f5f9;
+    }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
+    .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card.mastered .stat-value { color: #10b981; }
+    .stat-card.struggling .stat-value { color: #ef4444; }
+    .stat-card.learning .stat-value { color: #6366f1; }
+    .stat-card.attempts .stat-value { color: #f59e0b; }
+    
+    .section { margin-bottom: 2rem; }
+    .section h2 { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 0.8rem; }
+    
+    .bar-chart { display: flex; align-items: flex-end; gap: 0.5rem; height: 120px; padding: 0.5rem 0; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+    .bar {
+        width: 100%; background: linear-gradient(180deg, #6366f1, #8b5cf6);
+        border-radius: 6px 6px 0 0; min-height: 4px; height: 4px; transition: height 0.4s;
+    }
+    .bar-date { font-size: 0.65rem; color: #94a3b8; margin-top: 0.3rem; }
+    .bar-val { font-size: 0.7rem; font-weight: 600; color: #1e293b; }
+    
+    .deck-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .deck-row {
+        display: flex; justify-content: space-between; align-items: center;
+        background: white; border: 1px solid #f1f5f9; border-radius: 10px;
+        padding: 0.8rem 1rem; transition: box-shadow 0.2s;
+    }
+    .deck-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .deck-name { font-weight: 600; color: #1e293b; }
+    .deck-meta { font-size: 0.8rem; color: #94a3b8; }
+    
+    .empty-note { color: #94a3b8; text-align: center; padding: 2rem; }
+    
+    @media (max-width: 600px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .profile-header { flex-direction: column; text-align: center; }
+    }
+</style>
+
+<div class="profile-page">
+    <div class="profile-header">
+        <div class="profile-avatar">{{ user.username|slice:":1"|upper }}</div>
+        <div class="profile-info">
+            <h1>{{ user.username }}</h1>
+            {% if user.email %}<p class="email">{{ user.email }}</p>{% endif %}
+            <p>Дата регистрации: {{ user.date_joined|date:"d.m.Y" }}</p>
+            <a href="{% url 'accounts:profile_edit' %}" class="btn btn-outline btn-sm mt-2">Редактировать</a>
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card mastered">
+            <div class="stat-value">{{ cards_mastered }}</div>
+            <div class="stat-label">Освоено</div>
+        </div>
+        <div class="stat-card learning">
+            <div class="stat-value">{{ cards_learning }}</div>
+            <div class="stat-label">В процессе</div>
+        </div>
+        <div class="stat-card struggling">
+            <div class="stat-value">{{ cards_struggling }}</div>
+            <div class="stat-label">Сложные</div>
+        </div>
+        <div class="stat-card attempts">
+            <div class="stat-value">{{ total_attempts }}</div>
+            <div class="stat-label">Попыток</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Колоды ({{ total_decks }})</h2>
+        {% if recent_decks %}
+        <div class="deck-list">
+            {% for deck in recent_decks %}
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-row">
+                <span class="deck-name">{{ deck.name }}</span>
+                <span class="deck-meta">{{ deck.flashcard_set.count }} карточек — {{ deck.visibility }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-note">Нет созданных колод</p>
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <h2>Активность (7 дней)</h2>
+        {% if daily_progress %}
+        <div class="bar-chart">
+            {% for day in daily_progress %}
+            <div class="bar-col">
+                <div class="bar" data-height="{{ day.count }}" data-max="{{ daily_progress.0.count }}"></div>
+                <div class="bar-date">{{ day.date }}</div>
+                <div class="bar-val">{{ day.count }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-note">Нет данных</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.bar[data-height]').forEach(function(bar) {
+            var h = parseInt(bar.dataset.height) || 0;
+            var m = parseInt(bar.dataset.max) || 1;
+            bar.style.height = Math.max((h / m) * 100, 4) + '%';
+        });
+    });
+</script>
+{% endblock %}

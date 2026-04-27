@@ -86,10 +86,16 @@ class FlashcardBulkCreateView(LoginRequiredMixin, View):
             return render(request, self.template_name, {'deck': deck})
         
         try:
+            # Получаем существующие термины в колоде
+            existing_terms = set(
+                Flashcard.objects.filter(deck=deck, is_active=True)
+                .values_list('term', flat=True)
+            )
+            
             llm_service = LLMGeneratorService()
             cards_data = llm_service.generate_cards_by_topic(
                 topic=topic,
-                count=count,
+                count=count + len(existing_terms),  # Запрашиваем больше, чтобы хватило после фильтрации
                 target_lang=deck.target_language,
                 native_lang=deck.native_language
             )
@@ -101,6 +107,10 @@ class FlashcardBulkCreateView(LoginRequiredMixin, View):
                 term = str(card_data.get('term', '')).strip()
                 translation = str(card_data.get('translation', '')).strip()
                 
+                # Пропускаем, если термин уже существует
+                if term.lower() in [t.lower() for t in existing_terms]:
+                    continue
+                
                 if term and translation:
                     Flashcard.objects.create(
                         deck=deck,
@@ -110,16 +120,21 @@ class FlashcardBulkCreateView(LoginRequiredMixin, View):
                         example_sentence=str(card_data.get('example', '')),
                         base_difficulty=3
                     )
+                    existing_terms.add(term)
                     created_count += 1
                     total_tokens += card_data.get('tokens_used', 0)
+                
+                # Останавливаемся, когда набрали нужное количество
+                if created_count >= count:
+                    break
             
             if created_count > 0:
-                messages.success(request, f"✅ Создано {created_count} карточек по теме «{topic}»!")
+                messages.success(request, f"Создано {created_count} новых карточек по теме «{topic}»!")
             else:
-                messages.warning(request, "⚠️ Не удалось создать карточки. Попробуйте другую тему.")
+                messages.warning(request, "Все карточки по этой теме уже существуют. Попробуйте другую тему.")
             
         except Exception as e:
-            messages.error(request, f"❌ Ошибка генерации: {str(e)}")
+            messages.error(request, f"Ошибка генерации: {str(e)}")
         
         return redirect('cards:deck_detail', pk=deck_pk)
 

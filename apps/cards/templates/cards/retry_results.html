@@ -4,78 +4,44 @@
 
 {% block content %}
 <style>
-    /* Скопируйте стили из study_results.html или подключите тот же CSS */
-    .retry-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-        text-align: center;
-    }
-    .message-box {
-        background: white;
-        border-radius: 24px;
-        padding: 3rem 2rem;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
-    }
-    .message-box h2 {
-        color: #2c3e50;
-        margin-bottom: 1rem;
-    }
-    .progress-update {
-        font-size: 1.2rem;
-        color: #666;
-        margin-bottom: 2rem;
-    }
-    .stats-mini {
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-    .stat-mini {
-        text-align: center;
-    }
-    .stat-mini .value {
-        font-size: 2rem;
-        font-weight: 700;
-    }
-    .stat-mini.mastered .value { color: #27ae60; }
-    .stat-mini.struggling .value { color: #e74c3c; }
+    .retry-page { max-width: 500px; margin: 3rem auto; text-align: center; }
+    .retry-card { background: white; border-radius: 20px; padding: 2.5rem 2rem; border: 1px solid #f1f5f9; }
+    .retry-card h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; }
+    
+    .mini-stats { display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem; }
+    .mini-stat { text-align: center; }
+    .mini-stat .value { font-size: 2rem; font-weight: 700; }
+    .mini-stat .label { font-size: 0.8rem; color: #94a3b8; }
+    .mini-mastered .value { color: #10b981; }
+    .mini-struggling .value { color: #ef4444; }
+    
+    .retry-card p { color: #64748b; margin-bottom: 1.5rem; }
+    .retry-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
 </style>
 
-<div class="retry-container">
-    <div class="message-box">
-        <h2>Круг повторения завершён!</h2>
-        
-        <div class="stats-mini">
-            <div class="stat-mini mastered">
+<div class="retry-page">
+    <div class="retry-card">
+        <h2>Круг повторения завершен</h2>
+        <div class="mini-stats">
+            <div class="mini-stat mini-mastered">
                 <div class="value">{{ mastered_count }}</div>
                 <div class="label">Освоено</div>
             </div>
-            <div class="stat-mini struggling">
+            <div class="mini-stat mini-struggling">
                 <div class="value">{{ struggling_count }}</div>
                 <div class="label">Осталось</div>
             </div>
         </div>
-        
         {% if struggling_cards %}
-            <p class="progress-update">Отличный прогресс! Осталось ещё немного.</p>
-            <a href="{% url 'cards:retry_struggling' deck.pk %}" class="btn btn-primary btn-large">
-                Продолжить повторение
-            </a>
-        {% else %}
-            <p class="progress-update">Поздравляем! Все карточки освоены!</p>
-            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-success btn-large">
-                Посмотреть финальные результаты
-            </a>
-        {% endif %}
-        
-        <div style="margin-top: 2rem;">
-            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-secondary">
-                ← Вернуться к колоде
-            </a>
+        <p>Отличный прогресс! Продолжим?</p>
+        <div class="retry-actions">
+            <a href="{% url 'cards:retry_struggling' deck.pk %}" class="btn btn-primary">Продолжить</a>
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">К колоде</a>
         </div>
+        {% else %}
+        <p>Все карточки освоены!</p>
+        <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-primary">Финальные результаты</a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

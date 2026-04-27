@@ -1,39 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}
-    {% if flashcard %}Редактирование{% else %}Добавление{% endif %} карточки
-{% endblock %}
+{% block title %}{% if flashcard %}Редактирование{% else %}Добавление{% endif %} карточки{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>{% if flashcard %}Редактировать{% else %}Добавить{% endif %} карточку</h2>
-    <p>Колода: <strong>{{ deck.name }}</strong> ({{ deck.target_language }} → {{ deck.native_language }})</p>
-    
-    {% if not flashcard %}
-    <div class="info-message" style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-        <p>💡 <strong>Авто-генерация через ИИ:</strong> Введите только термин, и OpenAI автоматически создаст перевод, 
-        часть речи и пример использования!</p>
-    </div>
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
+<style>
+    .form-page { max-width: 500px; margin: 0 auto; }
+    .form-card { background: white; border-radius: 20px; padding: 2rem; border: 1px solid #f1f5f9; }
+    .form-card h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 1.2rem; text-align: center; }
+    .form-card .deck-info { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .ai-hint { background: #eef2ff; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; font-size: 0.85rem; color: #6366f1; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .form-group input, .form-group textarea, .form-group select {
+        width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #6366f1; }
+    .form-actions { display: flex; gap: 0.8rem; margin-top: 1.2rem; }
+    .form-actions .btn { flex: 1; }
+</style>
+
+<div class="form-page">
+    <div class="form-card">
+        <h2>{% if flashcard %}Редактировать{% else %}Новая карточка{% endif %}</h2>
+        <p class="deck-info">{{ deck.name }} ({{ deck.target_language }} → {{ deck.native_language }})</p>
         
-        {% if flashcard %}
-            {{ form.as_p }}
-        {% else %}
-            <p>
-                <label for="id_term">Термин (слово для изучения):</label>
-                <input type="text" name="term" id="id_term" required 
-                       placeholder="Например: apple" style="width: 100%; padding: 0.5rem;">
-            </p>
-            <p class="help-text">Остальные поля будут заполнены автоматически с помощью ИИ</p>
+        {% if not flashcard %}
+        <div class="ai-hint">Введите слово, и ИИ сгенерирует перевод и пример автоматически</div>
         {% endif %}
         
-        <button type="submit" class="btn btn-success">
-            {% if flashcard %}Сохранить{% else %}Создать с помощью ИИ{% endif %}
-        </button>
-        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn">Отмена</a>
-    </form>
+        <form method="post">
+            {% csrf_token %}
+            {% if flashcard %}
+                {{ form.as_p }}
+            {% else %}
+            <div class="form-group">
+                <label for="id_term">Слово</label>
+                <input type="text" name="term" id="id_term" required placeholder="Например: apple">
+            </div>
+            {% endif %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% if flashcard %}Сохранить{% else %}Создать{% endif %}</button>
+                <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">Отмена</a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

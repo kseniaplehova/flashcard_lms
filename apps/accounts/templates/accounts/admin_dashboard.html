@@ -5,310 +5,222 @@
 
 {% block content %}
 <style>
-    .admin-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 1.5rem;
-    }
+    .admin-page { width: 100%; }
+    .admin-page h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; }
     
-    .admin-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-    
-    .admin-header h1 {
-        color: #2c3e50;
-        font-size: 2rem;
-    }
-    
-    .admin-badge {
-        background: #1b173a;
-        color: white;
-        padding: 0.5rem 1.5rem;
-        border-radius: 30px;
-        font-weight: 600;
-    }
-    
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; margin-bottom: 1.5rem; }
     .stat-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.8rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        text-align: center;
+        background: white; border-radius: 16px; padding: 1.2rem;
+        border: 1px solid #f1f5f9; transition: box-shadow 0.2s; text-align: center;
     }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
+    .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.2rem; }
+    .stat-sub { font-size: 0.75rem; color: #6366f1; margin-top: 0.2rem; }
     
-    .stat-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-    }
-    
-    .stat-label {
-        color: #666;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    .stat-trend {
-        margin-top: 0.5rem;
-        font-size: 0.85rem;
-        color: #27ae60;
-    }
-    
-    .charts-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
     .chart-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        background: white; border-radius: 16px; padding: 1.5rem; border: 1px solid #f1f5f9;
     }
+    .chart-card h3 { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; }
     
-    .chart-title {
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
-        font-size: 1.2rem;
-        font-weight: 600;
-    }
-    
-    .bar-chart {
-        display: flex;
-        align-items: flex-end;
-        gap: 0.5rem;
-        height: 200px;
-        padding: 1rem 0;
-    }
-    
-    .bar-container {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-    }
-    
+    .bar-chart { display: flex; align-items: flex-end; gap: 0.5rem; height: 140px; padding: 0.5rem 0; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
     .bar {
-        width: 100%;
-        background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-        border-radius: 8px 8px 0 0;
-        min-height: 4px;
-        transition: height 0.3s;
-        height: 4px;
+        width: 100%; background: linear-gradient(180deg, #6366f1, #8b5cf6);
+        border-radius: 6px 6px 0 0; min-height: 4px; height: 4px; transition: height 0.4s;
     }
+    .bar.green { background: linear-gradient(180deg, #10b981, #059669); }
+    .bar.orange { background: linear-gradient(180deg, #f59e0b, #d97706); }
+    .bar-date { font-size: 0.65rem; color: #94a3b8; margin-top: 0.3rem; }
+    .bar-val { font-size: 0.75rem; font-weight: 600; color: #1e293b; }
     
-    .bar-label {
-        margin-top: 0.5rem;
-        font-size: 0.8rem;
-        color: #666;
+    .lang-bars { display: flex; flex-direction: column; gap: 0.5rem; }
+    .lang-row { display: flex; align-items: center; gap: 0.8rem; }
+    .lang-code {
+        width: 36px; height: 28px; border-radius: 6px; display: flex; align-items: center;
+        justify-content: center; font-weight: 700; font-size: 0.7rem; color: white; flex-shrink: 0;
     }
+    .lang-bar-wrap { flex: 1; height: 24px; background: #f1f5f9; border-radius: 12px; overflow: hidden; }
+    .lang-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 12px; transition: width 0.5s; display: flex; align-items: center; padding-left: 0.5rem; }
+    .lang-bar-val { font-size: 0.7rem; color: white; font-weight: 600; white-space: nowrap; }
+    .lang-count { font-size: 0.8rem; color: #64748b; min-width: 60px; text-align: right; }
     
-    .bar-value {
-        font-weight: 600;
-        color: #2c3e50;
-    }
+    .table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .table th { text-align: left; padding: 0.5rem; color: #94a3b8; font-weight: 500; border-bottom: 1px solid #e2e8f0; }
+    .table td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; color: #64748b; }
+    .table td:first-child { color: #1e293b; font-weight: 500; }
     
-    .activity-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+    .list { list-style: none; }
+    .list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+    .pill { background: #eef2ff; color: #6366f1; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 500; }
+    .pill-green { background: #ecfdf5; color: #10b981; }
+    .pill-orange { background: #fffbeb; color: #d97706; }
     
-    .activity-table th {
-        text-align: left;
-        padding: 0.75rem;
-        color: #666;
-        font-weight: 500;
-        border-bottom: 2px solid #ecf0f1;
-    }
+    .empty-note { text-align: center; color: #94a3b8; padding: 2rem; font-size: 0.85rem; }
     
-    .activity-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #ecf0f1;
-    }
-    
-    .user-list {
-        list-style: none;
-    }
-    
-    .user-list li {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #ecf0f1;
-    }
-    
-    .badge {
-        background: #4facfe;
-        color: white;
-        padding: 0.2rem 0.7rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-    }
-    
-    .empty-message {
-        text-align: center;
-        padding: 2rem;
-        color: #999;
-    }
-    
-    @media (max-width: 1000px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        .charts-row {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    @media (max-width: 600px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
+    @media (max-width: 800px) {
+        .charts-row { grid-template-columns: 1fr; }
+        .stats-row { grid-template-columns: repeat(3, 1fr); }
     }
 </style>
 
-<div class="admin-container">
-    <div class="admin-header">
-        <h1>Административная панель</h1>
-    </div>
+<div class="admin-page">
+    <h1>Административная панель</h1>
     
-    <!-- Основные метрики -->
-    <div class="stats-grid">
+    <div class="stats-row">
         <div class="stat-card">
-            <div class="stat-icon"></div>
             <div class="stat-value">{{ total_users|default:0 }}</div>
-            <div class="stat-label">Всего пользователей</div>
+            <div class="stat-label">Пользователей</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon"></div>
             <div class="stat-value">{{ active_today|default:0 }}</div>
-            <div class="stat-label">Активных сегодня</div>
-            <div class="stat-trend">↗{{ active_week|default:0 }} за неделю</div>
+            <div class="stat-label">Сегодня</div>
+            <div class="stat-sub">{{ active_week|default:0 }} за неделю</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon"></div>
             <div class="stat-value">{{ total_decks|default:0 }}</div>
-            <div class="stat-label">Всего колод</div>
+            <div class="stat-label">Колод</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon"></div>
             <div class="stat-value">{{ public_decks|default:0 }}</div>
-            <div class="stat-label">Публичных колод</div>
+            <div class="stat-label">Публичных</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_cards|default:0 }}</div>
+            <div class="stat-label">Карточек</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_likes|default:0 }}</div>
+            <div class="stat-label">Лайков</div>
         </div>
     </div>
     
-    <!-- Графики -->
     <div class="charts-row">
         <div class="chart-card">
-            <div class="chart-title">Активность за последние 7 дней</div>
+            <h3>Активность (7 дней)</h3>
             {% if daily_stats %}
             <div class="bar-chart">
                 {% for day in daily_stats %}
-                <div class="bar-container">
-                    <div class="bar" data-height="{{ day.count }}"></div>
-                    <div class="bar-label">{{ day.date }}</div>
-                    <div class="bar-value">{{ day.count }}</div>
+                <div class="bar-col">
+                    <div class="bar" data-height="{{ day.count }}" data-max="{{ daily_stats.0.count }}"></div>
+                    <div class="bar-date">{{ day.date }}</div>
+                    <div class="bar-val">{{ day.count }}</div>
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-            <div class="empty-message">Нет данных за последние 7 дней</div>
-            {% endif %}
+            {% else %}<div class="empty-note">Нет данных</div>{% endif %}
         </div>
-        
         <div class="chart-card">
-            <div class="chart-title">Топ активных пользователей (30 дней)</div>
-            {% if top_users %}
-            <ul class="user-list">
-                {% for user_stat in top_users %}
-                <li>
-                    <span>{{ user_stat.user__username }}</span>
-                    <span class="badge">{{ user_stat.activity_count }} действий</span>
-                </li>
+            <h3>Новые пользователи</h3>
+            {% if new_users_stats %}
+            <div class="bar-chart">
+                {% for day in new_users_stats %}
+                <div class="bar-col">
+                    <div class="bar green" data-height="{{ day.count }}" data-max="{{ new_users_stats.0.count }}"></div>
+                    <div class="bar-date">{{ day.date }}</div>
+                    <div class="bar-val">{{ day.count }}</div>
+                </div>
                 {% endfor %}
-            </ul>
-            {% else %}
-            <div class="empty-message">Нет данных</div>
-            {% endif %}
+            </div>
+            {% else %}<div class="empty-note">Нет данных</div>{% endif %}
         </div>
     </div>
     
-    <!-- Последние действия и популярные колоды -->
     <div class="charts-row">
         <div class="chart-card">
-            <div class="chart-title">Последние действия</div>
+            <h3>Популярность языков</h3>
+            {% if language_stats %}
+            <div class="lang-bars">
+                {% for lang in language_stats %}
+                <div class="lang-row">
+                    <div class="lang-code" data-lang="{{ lang.code }}">{{ lang.code|upper }}</div>
+                    <div class="lang-bar-wrap">
+                        <div class="lang-bar-fill" data-width="{{ lang.count }}" data-max="{{ language_stats.0.count }}">
+                            <span class="lang-bar-val">{{ lang.name }}</span>
+                        </div>
+                    </div>
+                    <div class="lang-count">
+                        <strong>{{ lang.count }}</strong>
+                        <span style="font-size:0.7rem;"> ({{ lang.public_count }} публ.)</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}<div class="empty-note">Нет данных</div>{% endif %}
+        </div>
+        <div class="chart-card">
+            <h3>Топ пользователей (30 дн.)</h3>
+            {% if top_users %}
+            <ul class="list">
+                {% for u in top_users %}
+                <li><span>{{ u.user__username }}</span><span class="pill">{{ u.activity_count }} действ.</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}<div class="empty-note">Нет данных</div>{% endif %}
+        </div>
+    </div>
+    
+    <div class="charts-row">
+        <div class="chart-card">
+            <h3>Последние действия</h3>
             {% if recent_activities %}
-            <table class="activity-table">
-                <thead>
-                    <tr>
-                        <th>Пользователь</th>
-                        <th>Действие</th>
-                        <th>Время</th>
-                    </tr>
-                </thead>
+            <table class="table">
+                <thead><tr><th>Пользователь</th><th>Действие</th><th>Время</th></tr></thead>
                 <tbody>
-                    {% for activity in recent_activities %}
+                    {% for a in recent_activities|slice:":10" %}
                     <tr>
-                        <td>{{ activity.user.username }}</td>
-                        <td>
-                            {% if activity.action == 'login' %}Вход
-                            {% elif activity.action == 'logout' %}Выход
-                            {% elif activity.action == 'study_start' %}Начало обучения
-                            {% elif activity.action == 'study_complete' %}Завершение
-                            {% elif activity.action == 'deck_create' %}Создание колоды
-                            {% elif activity.action == 'card_create' %}Создание карточки
-                            {% else %}{{ activity.action }}
-                            {% endif %}
-                        </td>
-                        <td>{{ activity.created_at|time:"H:i" }}</td>
+                        <td>{{ a.user.username }}</td>
+                        <td>{% if a.action == 'login' %}Вход{% elif a.action == 'study_start' %}Обучение{% elif a.action == 'deck_create' %}Колода{% else %}{{ a.action }}{% endif %}</td>
+                        <td>{{ a.created_at|date:"d.m H:i" }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            {% else %}
-            <div class="empty-message">Нет действий</div>
-            {% endif %}
+            {% else %}<div class="empty-note">Нет действий</div>{% endif %}
         </div>
-        
         <div class="chart-card">
-            <div class="chart-title">Популярные колоды</div>
+            <h3>Популярные колоды</h3>
             {% if popular_decks %}
-            <ul class="user-list">
-                {% for deck in popular_decks %}
+            <ul class="list">
+                {% for d in popular_decks|slice:":5" %}
                 <li>
+                    <span>{{ d.name }} <small style="color:#94a3b8;">(@{{ d.owner.username }})</small></span>
                     <span>
-                        {{ deck.name }}
-                        <small style="color: #999;">({{ deck.owner.username }})</small>
+                        <span class="pill">{{ d.study_count }} обуч.</span>
+                        <span class="pill pill-green">{{ d.likes_count }} лайк.</span>
                     </span>
-                    <span class="badge">{{ deck.study_count }} обучений</span>
                 </li>
                 {% endfor %}
             </ul>
-            {% else %}
-            <div class="empty-message">Нет данных</div>
-            {% endif %}
+            {% else %}<div class="empty-note">Нет данных</div>{% endif %}
         </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline btn-sm">Выйти</button>
+    </form>
+</div>
     </div>
 </div>
 
 <script src="{% static 'accounts/js/admin_dashboard.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.bar[data-height]').forEach(function(bar) {
+            var height = parseInt(bar.dataset.height) || 0;
+            var max = parseInt(bar.dataset.max) || 1;
+            bar.style.height = Math.max((height / max) * 100, 4) + '%';
+        });
+        document.querySelectorAll('.lang-bar-fill[data-width]').forEach(function(bar) {
+            var width = parseInt(bar.dataset.width) || 0;
+            var max = parseInt(bar.dataset.max) || 1;
+            bar.style.width = Math.max((width / max) * 100, 10) + '%';
+        });
+        document.querySelectorAll('.lang-code[data-lang]').forEach(function(el) {
+            var colors = {en:'#3b82f6',es:'#f59e0b',fr:'#8b5cf6',de:'#ef4444',it:'#10b981',pt:'#10b981',ja:'#ef4444',ko:'#3b82f6',zh:'#ef4444',ru:'#6366f1'};
+            el.style.background = colors[el.dataset.lang] || '#6366f1';
+        });
+    });
+</script>
 {% endblock %}

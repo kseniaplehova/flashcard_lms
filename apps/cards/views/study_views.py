@@ -6,16 +6,13 @@ from django.http import HttpResponse
 from apps.cards.models import Deck, Flashcard, UserCardProgress
 from apps.cards.services.srs_engine import SRSEngine
 from apps.cards.services.llm_generator import LLMGeneratorService
-from core.mixins import DeckAccessMixin
 
 
-# Критерий освоенности карточки
 def is_card_mastered(progress: UserCardProgress) -> bool:
     """Карточка считается освоенной, если EF >= 2.0 и был хотя бы 1 правильный ответ."""
-    return progress.easiness_factor >= 2.0 and progress.consecutive_correct >= 1
+    return progress.easiness_factor >= 1.5 and progress.consecutive_correct >= 1
 
-
-class StudySessionView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
+class StudySessionView(LoginRequiredMixin, TemplateView):
     """
     Учебная сессия с разными типами упражнений.
     """
@@ -23,8 +20,12 @@ class StudySessionView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        session_key = f'study_session_{deck.pk}_completed'
         
+        # Проверка доступа к колоде
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            return redirect('cards:deck_list')
+        
+        session_key = f'study_session_{deck.pk}_completed'
         if session_key not in request.session:
             request.session[session_key] = []
             SRSEngine.reset_all_progress(request.user, deck)
@@ -120,11 +121,17 @@ class StudySessionView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
         return redirect('cards:study_results', deck_pk=deck.pk)
 
 
-class StudyResultsView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
+class StudyResultsView(LoginRequiredMixin, TemplateView):
     """
     Страница с результатами обучения.
     """
     template_name = 'cards/study_results.html'
+    
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            return redirect('cards:deck_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -171,7 +178,7 @@ class StudyResultsView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
         return context
 
 
-class RetryStrugglingView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
+class RetryStrugglingView(LoginRequiredMixin, TemplateView):
     """
     Повторение только проблемных карточек.
     """
@@ -179,8 +186,10 @@ class RetryStrugglingView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
     
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
-        session_key = f'retry_session_{deck.pk}_completed'
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            return redirect('cards:deck_list')
         
+        session_key = f'retry_session_{deck.pk}_completed'
         if session_key not in request.session:
             request.session[session_key] = []
             print("DEBUG: NEW RETRY SESSION STARTED")
@@ -264,7 +273,7 @@ class RetryStrugglingView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
         card = get_object_or_404(Flashcard, pk=card_id_int, deck=deck)
         progress = UserCardProgress.objects.get(user=request.user, flashcard=card)
         
-        quality = 5 if is_correct else 3
+        quality = 5 if is_correct else 2
         SRSEngine.process_review(progress, quality)
         
         session_key = f'retry_session_{deck.pk}_completed'
@@ -298,11 +307,15 @@ class RetryStrugglingView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
         return redirect('cards:retry_struggling', deck_pk=deck.pk)
 
 
-class RetryResultsView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
-    """
-    Промежуточные результаты после круга повторения.
-    """
+class RetryResultsView(LoginRequiredMixin, TemplateView):
+    """Промежуточные результаты."""
     template_name = 'cards/retry_results.html'
+    
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            return redirect('cards:deck_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -348,21 +361,24 @@ class RetryResultsView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
         return context
 
 
-class RetryCompleteView(LoginRequiredMixin, DeckAccessMixin, TemplateView):
-    """
-    Все проблемные карточки освоены!
-    """
+class RetryCompleteView(LoginRequiredMixin, TemplateView):
+    """Все карточки освоены."""
     template_name = 'cards/retry_complete.html'
+    
+    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):  # type: ignore[attr-defined]
+            return redirect('cards:deck_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
         user = self.request.user
         
-        stats = SRSEngine.get_statistics(user, deck)
+        # Принудительно обновляем статистику
+        SRSEngine._update_deck_progress(user, deck)
         
-        context.update({
-            'deck': deck,
-            'stats': stats,
-        })
+        stats = SRSEngine.get_statistics(user, deck)
+        context.update({'deck': deck, 'stats': stats})
         return context

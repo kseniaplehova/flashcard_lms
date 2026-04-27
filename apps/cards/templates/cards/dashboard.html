@@ -4,74 +4,147 @@
 
 {% block content %}
 <style>
-    .dashboard-container { max-width: 1200px; margin: 0 auto; }
-    .welcome-header { margin-bottom: 2.5rem; }
-    .welcome-header h1 { font-size: 2rem; margin-bottom: 0.3rem; }
-    .welcome-header p { color: #666; font-size: 1.1rem; }
-    .stat-card.decks .stat-value { color: #3498db; }
-    .stat-card.cards .stat-value { color: #9b59b6; }
-    .stat-card.mastered .stat-value { color: #27ae60; }
-    .stat-card.learning .stat-value { color: #f39c12; }
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-    .decks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .deck-card { background: white; border-radius: 20px; padding: 1.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #f0f0f0; }
-    .deck-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.12); }
-    .deck-name { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
-    .deck-name:hover { color: #3498db; }
-    .deck-description { color: #666; margin: 0.8rem 0; font-size: 0.95rem; }
-    .deck-meta { display: flex; gap: 1rem; font-size: 0.85rem; color: #888; margin-bottom: 1rem; }
-    .deck-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    @media (max-width: 768px) { .decks-grid { grid-template-columns: 1fr; } }
+    .dashboard { max-width: 1100px; padding: 0 0.5rem; }
+    
+    .greeting { margin-bottom: 2.5rem; }
+    .greeting h1 { font-size: 1.7rem; font-weight: 700; color: #1e293b; }
+    .greeting .date { color: #94a3b8; font-size: 0.9rem; margin-top: 0.2rem; }
+    
+    .stats-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .stat-pill {
+        background: white; border: 1px solid #e2e8f0; border-radius: 40px;
+        padding: 0.6rem 1.4rem; display: flex; align-items: center; gap: 0.6rem;
+        font-size: 0.9rem; color: #64748b; transition: all 0.25s; cursor: default;
+    }
+    .stat-pill:hover { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.08); transform: translateY(-1px); }
+    .stat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .stat-dot.decks { background: #6366f1; box-shadow: 0 0 8px rgba(99,102,241,0.4); }
+    .stat-dot.cards { background: #8b5cf6; box-shadow: 0 0 8px rgba(139,92,246,0.4); }
+    .stat-dot.mastered { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+    .stat-dot.learning { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+    .stat-pill strong { color: #1e293b; font-weight: 600; }
+    
+    .language-section { margin-bottom: 2.5rem; }
+    .language-header {
+        display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;
+        padding-bottom: 0.6rem; border-bottom: 1px solid #e2e8f0;
+    }
+    .language-flag {
+        width: 32px; height: 32px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.9rem; color: white;
+    }
+    .language-name { font-weight: 600; color: #1e293b; font-size: 1.1rem; }
+    .language-count { color: #94a3b8; font-size: 0.85rem; }
+    
+    .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1rem; }
+    .deck-card {
+        background: white; border-radius: 20px; padding: 1.4rem;
+        position: relative; overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer; color: inherit; display: block; border: 1px solid #f1f5f9;
+    }
+    .deck-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        transform: scaleX(0); transform-origin: left;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .deck-card:hover::before { transform: scaleX(1); }
+    .deck-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(99,102,241,0.2); border-color: #e2e8f0; }
+    .deck-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+    .deck-card-title { font-weight: 650; font-size: 1.1rem; color: #1e293b; }
+    .deck-card-badge { font-size: 0.7rem; padding: 0.25rem 0.7rem; border-radius: 20px; font-weight: 500; }
+    .badge-public { background: #dbeafe; color: #3b82f6; }
+    .badge-private { background: #f1f5f9; color: #94a3b8; }
+    .deck-card-desc { font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.8rem; line-height: 1.4; }
+    .deck-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.8rem; border-top: 1px solid #f1f5f9; }
+    .deck-card-count { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+    .deck-card-action { background: #6366f1; color: white; padding: 0.5rem 1.2rem; border-radius: 25px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
+    .deck-card-action:hover { background: #4f46e5; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    
+    .empty-state { text-align: center; padding: 3rem 2rem; background: white; border-radius: 20px; border: 2px dashed #e2e8f0; }
+    .empty-state h3 { font-size: 1.2rem; color: #1e293b; margin-bottom: 0.5rem; }
+    .empty-state p { color: #94a3b8; margin-bottom: 1.5rem; }
+    
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .deck-card { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
+    .deck-card:nth-child(1) { animation-delay: 0s; }
+    .deck-card:nth-child(2) { animation-delay: 0.08s; }
+    .deck-card:nth-child(3) { animation-delay: 0.16s; }
+    .deck-card:nth-child(4) { animation-delay: 0.24s; }
+    .deck-card:nth-child(5) { animation-delay: 0.32s; }
+    
     @media (max-width: 600px) {
-    .dashboard-container { padding: 0.5rem; }
-    .welcome-header h1 { font-size: 1.3rem; }
-    .welcome-header p { font-size: 0.9rem; }
-    .section-header { flex-direction: column; }
-    .section-header .btn { width: 100%; text-align: center; }
-    .deck-card { padding: 1.2rem; }
-    .deck-name { font-size: 1.1rem; }
-    .decks-grid { grid-template-columns: 1fr; }
-}
+        .greeting h1 { font-size: 1.4rem; }
+        .stats-row { gap: 0.5rem; }
+        .stat-pill { padding: 0.5rem 1rem; font-size: 0.8rem; }
+        .deck-grid { grid-template-columns: 1fr; }
+    }
 </style>
 
-<div class="dashboard-container">
-    <div class="welcome-header">
-        <h1>Привет, {{ user.username }}!</h1>
+<div class="dashboard">
+    <div class="greeting">
+        <h1>Добрый день, {{ user.username }}</h1>
+        <p class="date">{{ current_date|default:"" }}</p>
     </div>
-    <div class="stats-grid">
-        <div class="stat-card decks"><div class="stat-icon"></div><div class="stat-value">{{ decks|length }}</div><div class="stat-label">Колод</div></div>
-        <div class="stat-card cards"><div class="stat-icon"></div><div class="stat-value">{{ total_cards }}</div><div class="stat-label">Карточек</div></div>
-        <div class="stat-card mastered"><div class="stat-icon"></div><div class="stat-value">{{ mastered_total }}</div><div class="stat-label">Освоено</div></div>
-        <div class="stat-card learning"><div class="stat-icon"></div><div class="stat-value">{{ learning_total }}</div><div class="stat-label">В процессе</div></div>
+    
+    <div class="stats-row">
+        <div class="stat-pill"><span class="stat-dot decks"></span>Колод: <strong>{{ decks|length|default:0 }}</strong></div>
+        <div class="stat-pill"><span class="stat-dot cards"></span>Карточек: <strong>{{ total_cards|default:0 }}</strong></div>
+        <div class="stat-pill"><span class="stat-dot mastered"></span>Освоено: <strong>{{ mastered_total|default:0 }}</strong></div>
+        <div class="stat-pill"><span class="stat-dot learning"></span>В процессе: <strong>{{ learning_total|default:0 }}</strong></div>
     </div>
-    <div class="section-header">
-        <h2>Мои колоды</h2>
-        <a href="{% url 'cards:deck_create' %}" class="btn btn-primary">Создать колоду</a>
-    </div>
-    {% if decks %}
-        <div class="decks-grid">
-            {% for deck in decks %}
-            <div class="deck-card">
-                <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-name">{{ deck.name }}</a>
-                <p class="deck-description">{{ deck.description|default:"Нет описания" }}</p>
-                <div class="deck-meta">
-                    <span>{{ deck.flashcard_set.count }} карточек</span>
-                    <span>{{ deck.created_at|date:"d.m.Y" }}</span>
-                </div>
-                <div class="deck-actions">
-                    <a href="{% url 'cards:study_session' deck.pk %}" class="btn btn-success">Учить</a>
-                    <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">Просмотр</a>
-                </div>
+    
+    {% if language_groups %}
+        {% for lang, lang_decks in language_groups.items %}
+        <div class="language-section">
+            <div class="language-header">
+                <div class="language-flag" data-lang="{{ lang }}">{{ lang|upper }}</div>
+                <span class="language-name">
+                    {% if lang == 'en' %}Английский{% elif lang == 'es' %}Испанский{% elif lang == 'fr' %}Французский{% elif lang == 'de' %}Немецкий{% elif lang == 'it' %}Итальянский{% else %}{{ lang|upper }}{% endif %}
+                </span>
+                <span class="language-count">{{ lang_decks|length }} колод</span>
             </div>
-            {% endfor %}
+            <div class="deck-grid">
+                {% for deck in lang_decks %}
+                <a href="{% url 'cards:deck_detail' deck.pk %}" class="deck-card">
+                    <div class="deck-card-header">
+                        <span class="deck-card-title">{{ deck.name }}</span>
+                        <span class="deck-card-badge {% if deck.visibility == 'public' %}badge-public{% else %}badge-private{% endif %}">{{ deck.visibility|default:"private" }}</span>
+                    </div>
+                    <p class="deck-card-desc">{{ deck.description|default:"Без описания"|truncatechars:80 }}</p>
+                    <div class="deck-card-footer">
+                        <span class="deck-card-count">{{ deck.flashcard_set.count }} карточек</span>
+                        <span class="deck-card-action">Учить</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
         </div>
+        {% endfor %}
     {% else %}
         <div class="empty-state">
-            <div class="empty-state-icon"></div>
-            <h3>У вас пока нет колод</h3>
-            <p>Создайте свою первую колоду и начните учиться!</p>
+            <h3>Пока пусто</h3>
+            <p>Создайте первую колоду и начните обучение</p>
             <a href="{% url 'cards:deck_create' %}" class="btn btn-primary btn-large">Создать колоду</a>
         </div>
     {% endif %}
 </div>
+
+<script>
+    (function() {
+        var langColors = {
+            'en': '#3b82f6',
+            'es': '#f59e0b',
+            'fr': '#8b5cf6',
+            'de': '#ef4444',
+            'it': '#10b981'
+        };
+        document.querySelectorAll('.language-flag[data-lang]').forEach(function(el) {
+            var lang = el.getAttribute('data-lang');
+            el.style.background = langColors[lang] || '#6366f1';
+        });
+    })();
+</script>
 {% endblock %}

@@ -1,52 +1,23 @@
 {% extends 'base.html' %}
 
-{% block title %}Всё освоено! - {{ deck.name }}{% endblock %}
+{% block title %}Освоено - {{ deck.name }}{% endblock %}
 
 {% block content %}
 <style>
-    .complete-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 3rem 1rem;
-        text-align: center;
-    }
-    .success-box {
-        background: white;
-        border-radius: 24px;
-        padding: 3rem 2rem;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-    }
-    .success-icon {
-        font-size: 5rem;
-        margin-bottom: 1rem;
-    }
-    .success-box h2 {
-        color: #27ae60;
-        margin-bottom: 1rem;
-    }
-    .success-box p {
-        color: #666;
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
-    }
+    .complete-page { max-width: 460px; margin: 3rem auto; text-align: center; }
+    .complete-card { background: white; border-radius: 20px; padding: 2.5rem 2rem; border: 1px solid #f1f5f9; }
+    .complete-card h2 { font-size: 1.3rem; font-weight: 700; color: #10b981; margin-bottom: 0.8rem; }
+    .complete-card p { color: #64748b; margin-bottom: 1.5rem; }
+    .complete-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
 </style>
 
-<div class="complete-container">
-    <div class="success-box">
-        <div class="success-icon"></div>
-        <h2>Поздравляем!</h2>
-        <p>Все проблемные карточки успешно освоены!</p>
-        <p>Вы отлично поработали!</p>
-        
-        <div style="margin-top: 2rem;">
-            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-primary btn-large">
-                Посмотреть результаты
-            </a>
-        </div>
-        <div style="margin-top: 1rem;">
-            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-secondary">
-                ← Вернуться к колоде
-            </a>
+<div class="complete-page">
+    <div class="complete-card">
+        <h2>Все карточки освоены</h2>
+        <p>Вы отлично поработали! Все проблемные слова выучены.</p>
+        <div class="complete-actions">
+            <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-primary">Результаты</a>
+            <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">К колоде</a>
         </div>
     </div>
 </div>

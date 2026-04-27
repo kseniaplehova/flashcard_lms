@@ -90,36 +90,102 @@ class LLMGeneratorService:
         """
         Генерирует разнообразные упражнения для карточки.
         """
-        # Типы упражнений с разной вероятностью
+        # Типы упражнений с весами (сложные чаще)
         exercise_types = [
-            'multiple_choice',      # выбор из 4 вариантов
-            'typing',               # ввод с клавиатуры
-            'reverse_typing',       # обратный перевод
-            'fill_blank',           # заполнить пропуск
-            'true_false',           # правда/ложь
-            'match_synonym',        # подобрать синоним
-            'word_scramble',        # собрать слово из букв
+            'multiple_choice',      # 1
+            'typing',               # 2
+            'reverse_typing',       # 3
+            'fill_blank',           # 4
+            'audio_guess',          # 5 - новое: угадать слово по описанию
+            'synonym_match',        # 6 - новое: подобрать синоним из списка
+            'sentence_build',       # 7 - новое: составить предложение
         ]
         
         if exercise_type == "auto":
-            exercise_type = random.choice(exercise_types)
+            # Сложные упражнения имеют приоритет при повторении
+            if all_cards and len(all_cards) > 3:
+                weights = [1, 2, 2, 3, 3, 2, 3]  # веса для каждого типа
+                exercise_type = random.choices(exercise_types, weights=weights, k=1)[0]
+            else:
+                exercise_type = random.choice(exercise_types[:4])  # только простые
         
-        if exercise_type == 'multiple_choice':
-            return self._generate_multiple_choice(card, all_cards or [])
-        elif exercise_type == 'typing':
-            return self._generate_typing(card)
-        elif exercise_type == 'reverse_typing':
-            return self._generate_reverse_typing(card)
-        elif exercise_type == 'fill_blank':
-            return self._generate_fill_blank(card)
-        elif exercise_type == 'true_false':
-            return self._generate_true_false(card, all_cards or [])
-        elif exercise_type == 'match_synonym':
-            return self._generate_match_synonym(card)
-        elif exercise_type == 'word_scramble':
-            return self._generate_word_scramble(card)
+        generators = {
+            'multiple_choice': self._generate_multiple_choice,
+            'typing': self._generate_typing,
+            'reverse_typing': self._generate_reverse_typing,
+            'fill_blank': self._generate_fill_blank,
+            'audio_guess': self._generate_audio_guess,
+            'synonym_match': self._generate_synonym_match,
+            'sentence_build': self._generate_sentence_build,
+        }
+        
+        generator = generators.get(exercise_type, self._generate_multiple_choice)
+
+        # Некоторые генераторы не принимают all_cards
+        if exercise_type in ['fill_blank', 'typing', 'reverse_typing', 'audio_guess', 'sentence_build']:
+            return generator(card)
         else:
-            return self._generate_multiple_choice(card, all_cards or [])
+            return generator(card, all_cards or [])
+
+    def _generate_audio_guess(self, card: Flashcard, all_cards: Optional[List[Flashcard]] = None) -> Dict[str, Any]:
+        """Угадать слово по определению (без вариантов)."""
+        return {
+            'type': 'typing',
+            'question': 'Угадайте слово по определению:',
+            'term': card.definition,
+            'correct': card.term.lower().strip(),
+            'card_id': card.pk,
+            'hint': f'Первая буква: {card.term[0]}...' if card.term else '',
+        }
+
+    def _generate_synonym_match(self, card: Flashcard, all_cards: Optional[List[Flashcard]] = None) -> Dict[str, Any]:
+        """Подобрать синоним из 4 вариантов."""
+        synonyms_map = {
+            'happy': ['glad', 'sad', 'angry', 'tired'],
+            'big': ['large', 'small', 'tiny', 'fast'],
+            'fast': ['quick', 'slow', 'heavy', 'light'],
+            'smart': ['intelligent', 'stupid', 'lazy', 'weak'],
+            'beautiful': ['pretty', 'ugly', 'plain', 'dull'],
+            'delicious': ['tasty', 'bitter', 'sour', 'salty'],
+            'cold': ['chilly', 'hot', 'warm', 'mild'],
+        }
+        
+        options = synonyms_map.get(card.term.lower(), [
+            f'синоним к {card.term}',
+            f'антоним к {card.term}',
+            f'похожее слово',
+            f'противоположное'
+        ])
+        random.shuffle(options)
+        
+        return {
+            'type': 'multiple_choice',
+            'question': f'Выберите синоним к слову "{card.term}":',
+            'term': card.term,
+            'options': options,
+            'correct': options[0] if card.term.lower() in synonyms_map else options[0],
+            'card_id': card.pk,
+        }
+
+    def _generate_sentence_build(self, card: Flashcard, all_cards: Optional[List[Flashcard]] = None) -> Dict[str, Any]:
+        """Составить предложение из слов."""
+        if card.example_sentence:
+            words = card.example_sentence.split()
+            if len(words) >= 4:
+                correct = card.example_sentence
+                shuffled = words[:]
+                random.shuffle(shuffled)
+                return {
+                    'type': 'typing',
+                    'question': f'Составьте предложение из слов: {", ".join(shuffled)}',
+                    'term': ', '.join(shuffled),
+                    'correct': correct.lower().strip(),
+                    'card_id': card.pk,
+                    'hint': f'Используется слово: {card.term}',
+                }
+        
+        # Fallback
+        return self._generate_typing(card)
     
     def _generate_multiple_choice(self, card: Flashcard, all_cards: List[Flashcard]) -> Dict[str, Any]:
         """Выбор правильного перевода из 4 вариантов."""
@@ -147,7 +213,7 @@ class LLMGeneratorService:
             'card_id': card.pk,
         }
     
-    def _generate_typing(self, card: Flashcard) -> Dict[str, Any]:
+    def _generate_typing(self, card: Flashcard, all_cards: Optional[List[Flashcard]] = None) -> Dict[str, Any]:
         """Ввод перевода с клавиатуры."""
         return {
             'type': 'typing',
@@ -158,7 +224,7 @@ class LLMGeneratorService:
             'hint': f'💡 Первая буква: {card.definition[0]}...' if card.definition else '',
         }
     
-    def _generate_reverse_typing(self, card: Flashcard) -> Dict[str, Any]:
+    def _generate_reverse_typing(self, card: Flashcard, all_cards: Optional[List[Flashcard]] = None) -> Dict[str, Any]:
         """Обратный перевод (с русского на английский)."""
         return {
             'type': 'reverse_typing',
@@ -169,7 +235,7 @@ class LLMGeneratorService:
             'hint': f'💡 Первая буква: {card.term[0]}...' if card.term else '',
         }
     
-    def _generate_fill_blank(self, card: Flashcard) -> Dict[str, Any]:
+    def _generate_fill_blank(self, card: Flashcard, all_cards: Optional[List[Flashcard]] = None) -> Dict[str, Any]:
         """Заполнить пропуск в предложении."""
         if card.example_sentence and card.term in card.example_sentence:
             sentence = card.example_sentence.replace(card.term, '_____', 1)
