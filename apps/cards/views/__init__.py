@@ -18,11 +18,13 @@ from .card_views import (
 from .study_views import (
     StudySessionView,
     StudyResultsView,
-    RetryStrugglingView,
-    RetryResultsView,
-    RetryCompleteView,
 )
 
+from .study_views import (
+    StudySessionView,
+    StudyResultsView,
+    RetryStrugglingView,
+)
 __all__ = [
     "DashboardView",
     "DeckListView",
@@ -39,7 +41,4 @@ __all__ = [
     "FlashcardDeleteView",
     "StudySessionView",
     "StudyResultsView",
-    "RetryStrugglingView",
-    "RetryResultsView",
-    "RetryCompleteView",
 ]

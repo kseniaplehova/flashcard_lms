@@ -5,7 +5,7 @@
 
 {% block content %}
 <style>
-    .results-page { max-width: 800px; margin: 0 auto; }
+    .results-page { max-width: 1600px; margin: 0 auto; }
     .results-page h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 2rem; }
     
     .stats-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; }
@@ -71,8 +71,8 @@
     </div>
     
     <div class="progress-section">
-        <div class="progress-label"><span>Прогресс</span><span>{{ stats.mastered_percent }}%</span></div>
-        <div class="progress-bar"><div class="progress-fill" data-width="{{ stats.mastered_percent }}"></div></div>
+       <div class="progress-label"><span>Прогресс</span><span>{{ mastered_percent }}%</span></div>
+<div class="progress-bar"><div class="progress-fill" data-width="{{ mastered_percent }}"></div></div>
     </div>
     
     {% if mastered_cards %}

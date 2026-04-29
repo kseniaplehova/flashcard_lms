@@ -9,197 +9,198 @@ from apps.cards.services.llm_generator import LLMGeneratorService
 
 
 def is_card_mastered(progress: UserCardProgress) -> bool:
-    """Карточка считается освоенной, если EF >= 2.0 и был хотя бы 1 правильный ответ."""
     return progress.easiness_factor >= 1.5 and progress.consecutive_correct >= 1
 
 
 class StudySessionView(LoginRequiredMixin, TemplateView):
-    """
-    Учебная сессия с разными типами упражнений.
-    """
-
     template_name = "cards/study_session.html"
 
-    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
-        deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
+    def dispatch(self, request, *args, **kwargs):
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
 
-        if not (
-            deck.owner == request.user
-            or request.user.is_staff
-            or deck.visibility == "public"
-        ):
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == 'public'):
             return redirect("cards:deck_list")
 
-        session_key = f"study_session_{deck.pk}_completed"
-        if session_key not in request.session:
-            request.session[session_key] = []
-            SRSEngine.reset_all_progress(request.user, deck)
-            SRSEngine.initialize_deck_progress(request.user, deck)
+        self.session_key_completed = f"study_session_{deck.pk}_completed"
+        self.session_key_struggling = f"study_session_{deck.pk}_struggling"
+        self.session_key_stage = f"study_session_{deck.pk}_stage"
+        self.session_key_due_total = f"study_session_{deck.pk}_due_total"
+        self.session_key_test_pending = f"study_session_{deck.pk}_test_pending"
+        self.session_key_test_results = f"study_session_{deck.pk}_test_results"
 
-            # ЗАПОМИНАЕМ исходное количество due-карточек
-            due_cards = SRSEngine.get_due_cards(request.user, deck)
-            request.session[f"study_session_{deck.pk}_total"] = len(due_cards)
+        if request.method == 'GET' and self.session_key_stage not in request.session:
+            all_cards = Flashcard.objects.filter(deck=deck, is_active=True)
+            total_count = all_cards.count()
+
+            request.session[self.session_key_stage] = 'flashcard'
+            request.session[self.session_key_completed] = []
+            request.session[self.session_key_struggling] = []
+            request.session[self.session_key_due_total] = total_count
+            request.session[self.session_key_test_pending] = []
+            request.session[self.session_key_test_results] = {}
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
         user = self.request.user
 
-        due_cards = SRSEngine.get_due_cards(user, deck)
-        stats = SRSEngine.get_statistics(user, deck)
+        stage = self.request.session.get(self.session_key_stage, 'flashcard')
+        completed = self.request.session.get(self.session_key_completed, [])
+        struggling = self.request.session.get(self.session_key_struggling, [])
+        total_due = self.request.session.get(self.session_key_due_total, 0)
 
-        session_key = f"study_session_{deck.pk}_completed"
-        completed_ids = self.request.session.get(session_key, [])
+        all_active_cards = list(Flashcard.objects.filter(deck=deck, is_active=True))
 
-        current_card = None
-        for card in due_cards:
-            if card.pk not in completed_ids:
-                current_card = card
-                break
+        if stage == 'flashcard':
+            available = [c for c in all_active_cards if c.pk not in completed]
 
-        if current_card is None:
-            context.update(
-                {
-                    "deck": deck,
-                    "stats": stats,
-                    "session_completed": True,
-                    "no_cards": True,
-                }
-            )
-            return context
+            if not available:
+                if struggling:
+                    self.request.session[self.session_key_stage] = 'test'
+                    self.request.session[self.session_key_test_pending] = struggling.copy()
+                    self.request.session[self.session_key_completed] = []
+                    self.request.session.modified = True
+                    return self.get_context_data(**kwargs)
+                else:
+                    # Нет "не знаю" — все карточки освоены
+                    results = {}
+                    for c in all_active_cards:
+                        results[str(c.pk)] = {
+                            'term': c.term,
+                            'definition': c.definition,
+                            'correct': True
+                        }
+                    self.request.session[self.session_key_test_results] = results
+                    for key in [self.session_key_stage, self.session_key_completed,
+                               self.session_key_due_total, self.session_key_test_pending,
+                               self.session_key_struggling]:
+                        self.request.session.pop(key, None)
+                    self.request.session.modified = True
+                    context.update({"deck": deck, "no_cards": True})
+                    return context
 
-        progress = UserCardProgress.objects.get(user=user, flashcard=current_card)
-        all_cards = list(deck.flashcard_set.filter(is_active=True))
-
-        llm_service = LLMGeneratorService()
-        exercise = llm_service.generate_exercise(
-            card=current_card, exercise_type="multiple_choice", all_cards=all_cards
-        )
-
-        # Берём СОХРАНЁННОЕ общее количество
-        total_in_session = self.request.session.get(
-            f"study_session_{deck.pk}_total", len(due_cards)
-        )
-        answered_count = len(completed_ids)
-        current_number = answered_count + 1
-
-        context.update(
-            {
+            card = available[0]
+            context.update({
                 "deck": deck,
-                "card": current_card,
-                "progress": progress,
-                "total_due": total_in_session,  # КОНСТАНТА из сессии
-                "current_number": current_number,
-                "stats": stats,
-                "exercise": exercise,
-                "session_completed": False,
-                "no_cards": False,
-            }
-        )
+                "card": card,
+                "stage": "flashcard",
+                "total_due": total_due,
+                "current_number": len(completed) + 1,
+                "exercise": self.llm_service.generate_exercise(card, "flashcard"),
+            })
+        else:
+            pending_ids = self.request.session.get(self.session_key_test_pending, [])
+            completed_test = self.request.session.get(self.session_key_completed, [])
+            remaining = [pid for pid in pending_ids if pid not in completed_test]
+
+            if not remaining:
+                # Сохраняем ВСЕ карточки: те, что в struggling — неверные, остальные — верные
+                results = {}
+                struggling_set = set(struggling)
+                for c in all_active_cards:
+                    is_correct = c.pk not in struggling_set
+                    results[str(c.pk)] = {
+                        'term': c.term,
+                        'definition': c.definition,
+                        'correct': is_correct
+                    }
+                self.request.session[self.session_key_test_results] = results
+                for key in [self.session_key_stage, self.session_key_completed,
+                           self.session_key_due_total, self.session_key_test_pending,
+                           self.session_key_struggling]:
+                    self.request.session.pop(key, None)
+                self.request.session.modified = True
+                context.update({"deck": deck, "no_cards": True})
+                return context
+
+            next_id = remaining[0]
+            card = get_object_or_404(Flashcard, pk=next_id, deck=deck)
+            context.update({
+                "deck": deck,
+                "card": card,
+                "stage": "test",
+                "total_due": len(pending_ids),
+                "current_number": len(completed_test) + 1,
+                "exercise": self.llm_service.generate_exercise(card, "auto", all_active_cards),
+            })
         return context
 
-    def post(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
-        deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
-        card_id = request.POST.get("card_id", "").strip()
+    def post(self, request, *args, **kwargs):
+        deck = get_object_or_404(Deck, pk=self.kwargs['deck_pk'])
 
+        card_id = request.POST.get('card_id')
         if not card_id:
-            return redirect("cards:study_session", deck_pk=deck.pk)
+            return redirect('cards:study_session', deck_pk=deck.pk)
 
         try:
-            card_id_int = int(card_id)
+            card_id = int(card_id)
         except ValueError:
-            return redirect("cards:study_session", deck_pk=deck.pk)
+            return redirect('cards:study_session', deck_pk=deck.pk)
 
-        is_correct = request.POST.get("is_correct") == "true"
+        is_correct = request.POST.get('is_correct') == 'true'
 
-        card = get_object_or_404(Flashcard, pk=card_id_int, deck=deck)
-        progress = UserCardProgress.objects.get(user=request.user, flashcard=card)
+        completed = request.session.get(self.session_key_completed, [])
 
-        quality = 5 if is_correct else 2
-        SRSEngine.process_review(progress, quality)
+        if card_id not in completed:
+            completed.append(card_id)
+            request.session[self.session_key_completed] = completed
 
-        session_key = f"study_session_{deck.pk}_completed"
-        completed_ids = request.session.get(session_key, [])
+            stage = request.session.get(self.session_key_stage, 'flashcard')
+            if stage == 'flashcard' and not is_correct:
+                struggling = request.session.get(self.session_key_struggling, [])
+                if card_id not in struggling:
+                    struggling.append(card_id)
+                    request.session[self.session_key_struggling] = struggling
 
-        if card_id_int not in completed_ids:
-            completed_ids.append(card_id_int)
-            request.session[session_key] = completed_ids
+            request.session.modified = True
 
-        due_cards = SRSEngine.get_due_cards(request.user, deck)
-        remaining = [c for c in due_cards if c.pk not in completed_ids]
+        return redirect('cards:study_session', deck_pk=deck.pk)
 
-        if remaining:
-            return redirect("cards:study_session", deck_pk=deck.pk)
-
-        request.session.pop(session_key, None)
-        return redirect("cards:study_results", deck_pk=deck.pk)
+    @property
+    def llm_service(self):
+        if not hasattr(self, '_llm'):
+            self._llm = LLMGeneratorService()
+        return self._llm
 
 
 class StudyResultsView(LoginRequiredMixin, TemplateView):
-    """
-    Страница с результатами обучения.
-    """
-
     template_name = "cards/study_results.html"
 
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
-        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == "public"):  # type: ignore[attr-defined]
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == "public"):
             return redirect("cards:deck_list")
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
-        user = self.request.user
-
-        stats = SRSEngine.get_statistics(user, deck)
-
-        all_progress = UserCardProgress.objects.filter(
-            user=user, flashcard__deck=deck, flashcard__is_active=True
-        ).select_related("flashcard")
-
-        mastered_cards = []
-        struggling_cards = []
-
-        for progress in all_progress:
-            card_info = {
-                "id": progress.flashcard.pk,
-                "term": progress.flashcard.term,
-                "definition": progress.flashcard.definition,
-                "easiness_factor": round(progress.easiness_factor, 2),
-                "consecutive_correct": progress.consecutive_correct,
-                "total_errors": progress.total_errors,
-            }
-
-            if is_card_mastered(progress):
-                mastered_cards.append(card_info)
-            else:
-                struggling_cards.append(card_info)
-
-        struggling_cards.sort(key=lambda x: x["easiness_factor"])
-
-        context.update(
-            {
-                "deck": deck,
-                "stats": stats,
-                "mastered_cards": mastered_cards,
-                "struggling_cards": struggling_cards,
-                "mastered_count": len(mastered_cards),
-                "struggling_count": len(struggling_cards),
-                "total_cards": len(mastered_cards) + len(struggling_cards),
-            }
-        )
+        
+        results_key = f"study_session_{deck.pk}_test_results"
+        results = self.request.session.get(results_key, {})
+        
+        all_cards = Flashcard.objects.filter(deck=deck, is_active=True)
+        total = all_cards.count()
+        
+        mastered = [r for r in results.values() if r.get('correct')]
+        struggling = [r for r in results.values() if not r.get('correct')]
+        mastered_percent = int((len(mastered) / total) * 100) if total > 0 else 0
+        
+        context.update({
+            "deck": deck,
+            "total_cards": total,
+            "mastered_cards": mastered,
+            "struggling_cards": struggling,
+            "mastered_count": len(mastered),
+            "struggling_count": len(struggling),
+            "mastered_percent": mastered_percent,
+        })
         return context
 
 
 class RetryStrugglingView(LoginRequiredMixin, TemplateView):
-    """
-    Повторение только проблемных карточек.
-    """
-
     template_name = "cards/study_session.html"
 
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -210,8 +211,6 @@ class RetryStrugglingView(LoginRequiredMixin, TemplateView):
         session_key = f'retry_session_{deck.pk}_completed'
         if session_key not in request.session:
             request.session[session_key] = []
-            
-            # ЗАПОМИНАЕМ исходное количество проблемных карточек
             all_progress = UserCardProgress.objects.filter(
                 user=request.user,
                 flashcard__deck=deck,
@@ -254,7 +253,6 @@ class RetryStrugglingView(LoginRequiredMixin, TemplateView):
 
         progress = UserCardProgress.objects.get(user=user, flashcard=current_card)
         stats = SRSEngine.get_statistics(user, deck)
-
         all_cards = list(deck.flashcard_set.filter(is_active=True))
 
         llm_service = LLMGeneratorService()
@@ -262,28 +260,21 @@ class RetryStrugglingView(LoginRequiredMixin, TemplateView):
             card=current_card, exercise_type="auto", all_cards=all_cards
         )
 
-        # НОВОЕ: правильный расчёт прогресса
-        total_in_round = total_in_round = self.request.session.get(f'retry_session_{deck.pk}_total', len(struggling_cards))
+        total_in_round = self.request.session.get(f'retry_session_{deck.pk}_total', len(struggling_cards))
         answered_in_round = len(completed_ids)
         current_number = answered_in_round + 1
-        progress_percent = (
-            int((current_number / total_in_round) * 100) if total_in_round > 0 else 0
-        )
 
-        context.update(
-            {
-                "deck": deck,
-                "card": current_card,
-                "progress": progress,
-                "total_due": total_in_round,
-                "current_number": current_number,
-                "progress_percent": progress_percent,
-                "stats": stats,
-                "exercise": exercise,
-                "session_completed": False,
-                "is_retry_mode": True,
-            }
-        )
+        context.update({
+            "deck": deck,
+            "card": current_card,
+            "progress": progress,
+            "total_due": total_in_round,
+            "current_number": current_number,
+            "stats": stats,
+            "exercise": exercise,
+            "session_completed": False,
+            "is_retry_mode": True,
+        })
         return context
 
     def post(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -335,69 +326,14 @@ class RetryStrugglingView(LoginRequiredMixin, TemplateView):
         return redirect("cards:retry_struggling", deck_pk=deck.pk)
 
 
-class RetryResultsView(LoginRequiredMixin, TemplateView):
-    """Промежуточные результаты."""
-
-    template_name = "cards/retry_results.html"
-
-    def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
-        deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
-        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == "public"):  # type: ignore[attr-defined]
-            return redirect("cards:deck_list")
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
-        user = self.request.user
-
-        stats = SRSEngine.get_statistics(user, deck)
-
-        all_progress = UserCardProgress.objects.filter(
-            user=user, flashcard__deck=deck, flashcard__is_active=True
-        ).select_related("flashcard")
-
-        mastered_cards = []
-        struggling_cards = []
-
-        for progress in all_progress:
-            card_info = {
-                "id": progress.flashcard.pk,
-                "term": progress.flashcard.term,
-                "definition": progress.flashcard.definition,
-                "easiness_factor": round(progress.easiness_factor, 2),
-                "consecutive_correct": progress.consecutive_correct,
-                "total_errors": progress.total_errors,
-            }
-
-            if is_card_mastered(progress):
-                mastered_cards.append(card_info)
-            else:
-                struggling_cards.append(card_info)
-
-        context.update(
-            {
-                "deck": deck,
-                "stats": stats,
-                "mastered_cards": mastered_cards,
-                "struggling_cards": struggling_cards,
-                "mastered_count": len(mastered_cards),
-                "struggling_count": len(struggling_cards),
-                "total_cards": len(mastered_cards) + len(struggling_cards),
-                "is_retry_results": True,
-            }
-        )
-        return context
 
 
 class RetryCompleteView(LoginRequiredMixin, TemplateView):
-    """Все карточки освоены."""
-
     template_name = "cards/retry_complete.html"
 
     def dispatch(self, request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
         deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
-        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == "public"):  # type: ignore[attr-defined]
+        if not (deck.owner == request.user or request.user.is_staff or deck.visibility == "public"):
             return redirect("cards:deck_list")
         return super().dispatch(request, *args, **kwargs)
 
@@ -406,9 +342,7 @@ class RetryCompleteView(LoginRequiredMixin, TemplateView):
         deck = get_object_or_404(Deck, pk=self.kwargs["deck_pk"])
         user = self.request.user
 
-        # Принудительно обновляем статистику
         SRSEngine._update_deck_progress(user, deck)
-
         stats = SRSEngine.get_statistics(user, deck)
         context.update({"deck": deck, "stats": stats})
         return context

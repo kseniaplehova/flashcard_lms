@@ -1,12 +1,39 @@
+// Глобальные функции для flashcard (должны быть ВНЕ DOMContentLoaded)
+function flipCard() {
+    var card = document.getElementById('flashcard');
+    if (card) {
+        card.classList.toggle('flipped');
+    }
+}
+
+function submitFlashcardAnswer(know) {
+    if (answered) return;
+    answered = true;
+    lastAnswerCorrect = know;
+    
+    document.getElementById('card-id-input').value = cardId;
+    document.getElementById('is-correct-input').value = know;
+    
+    // Быстрая отправка для flashcard (0.8 секунды)
+    setTimeout(function() {
+        document.getElementById('answer-form').submit();
+    }, 800);
+}
+
+// Глобальные переменные
+var correctAnswer = '';
+var cardId = 0;
+var totalCards = 0;
+var answered = false;
+var lastAnswerCorrect = false;
+
 document.addEventListener('DOMContentLoaded', function() {
     var container = document.querySelector('.study-page');
     if (!container) return;
     
-    var correctAnswer = container.dataset.correctAnswer || '';
-    var cardId = parseInt(container.dataset.cardId) || 0;
-    var totalCards = parseInt(container.dataset.totalCards) || 0;
-    var answered = false;
-    var lastAnswerCorrect = false;
+    correctAnswer = container.dataset.correctAnswer || '';
+    cardId = parseInt(container.dataset.cardId) || 0;
+    totalCards = parseInt(container.dataset.totalCards) || 0;
     
     console.log('study_session.js LOADED. Correct:', correctAnswer, 'Card:', cardId);
     
@@ -56,8 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else if (opt === selected && !isCorrect) b.classList.add('wrong');
             });
             
-            // Авто-отправка через 2 секунды
-            setTimeout(submitForm, 2000);
+            // НЕ отправляем автоматически — ждём кнопку "Далее"
         };
     });
     
@@ -90,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.disabled = true;
                 this.disabled = true;
                 
-                setTimeout(submitForm, 2000);
+                // НЕ отправляем автоматически — ждём кнопку "Далее"
             };
         }
     });
@@ -107,17 +133,35 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-var progressFill = document.getElementById('progress-fill');
-if (progressFill) {
-    var totalCards = parseInt(container.dataset.totalCards) || 1;
-    var currentNum = parseInt(container.dataset.currentNumber) || 1;
-    var percent = Math.round((currentNum / totalCards) * 100);
-    progressFill.style.width = percent + '%';
+    var progressFill = document.getElementById('progress-fill');
+    if (progressFill) {
+        var currentNum = parseInt(container.dataset.currentNumber) || 1;
+        var percent = Math.round((currentNum / totalCards) * 100);
+        progressFill.style.width = percent + '%';
+    }
+    
+    var cardNumSpan = document.getElementById('current-card-num');
+    if (cardNumSpan) {
+        cardNumSpan.textContent = container.dataset.currentNumber || '1';
+    }
+});
+
+// Озвучивание карточек
+function speakWord(text, lang) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
 }
 
-// Обновляем номер карточки
-var cardNumSpan = document.getElementById('current-card-num');
-if (cardNumSpan) {
-    cardNumSpan.textContent = container.dataset.currentNumber || '1';
-}
+document.querySelectorAll('.speak-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var text = this.dataset.text;
+        var lang = this.dataset.lang || 'en';
+        speakWord(text, lang);
+    });
 });

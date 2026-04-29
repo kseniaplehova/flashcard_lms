@@ -5,7 +5,7 @@
 
 {% block content %}
 <style>
-    .study-page { max-width: 700px; margin: 0 auto; }
+    .study-page { max-width: 1600px; margin: 0 auto; }
     .study-page h1 { font-size: 1.3rem; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 1rem; }
     
     .stats-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
@@ -13,20 +13,8 @@
     
     .progress-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; }
     
-    .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: #e2e8f0;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-        overflow: hidden;
-    }
-    .progress-fill {
-        height: 100%;
-        background: #6366f1;
-        border-radius: 4px;
-        transition: width 0.3s ease;
-    }
+    .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; margin-bottom: 1rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: #6366f1; border-radius: 4px; transition: width 0.3s ease; }
     
     .exercise-box { background: white; border-radius: 20px; padding: 2rem; border: 1px solid #f1f5f9; margin: 1rem 0; text-align: center; }
     .exercise-box h2 { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; }
@@ -34,11 +22,25 @@
     .exercise-sentence { font-size: 1.1rem; color: #64748b; background: #f8fafc; padding: 1rem; border-radius: 12px; margin: 1rem 0; }
     .exercise-words { font-size: 0.9rem; color: #6366f1; background: #eef2ff; padding: 0.8rem; border-radius: 10px; margin: 1rem 0; line-height: 1.6; }
     
+    /* Стили для flashcard */
+    .flashcard-container { perspective: 1000px; margin: 1rem auto; max-width: 400px; }
+    .flashcard { position: relative; width: 100%; height: 250px; cursor: pointer; transition: transform 0.6s; transform-style: preserve-3d; }
+    .flashcard.flipped { transform: rotateY(180deg); }
+    .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .flashcard-front { background: #6366f1; color: white; }
+    .flashcard-back { background: #10b981; color: white; transform: rotateY(180deg); }
+    .flashcard-def { font-size: 1.5rem; color: white; }
+    .flashcard-term { font-size: 2.5rem; }
+    
+    .flashcard-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+    .flashcard-know-btn, .flashcard-dont-know-btn { padding: 0.7rem 2rem; border-radius: 12px; font-size: 1rem; cursor: pointer; border: none; font-weight: 600; transition: all 0.2s; }
+    .flashcard-know-btn { background: #10b981; color: white; }
+    .flashcard-know-btn:hover { background: #059669; }
+    .flashcard-dont-know-btn { background: #ef4444; color: white; }
+    .flashcard-dont-know-btn:hover { background: #dc2626; }
+    
     .options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-top: 1.5rem; }
-    .option-btn {
-        padding: 0.9rem; font-size: 0.95rem; border: 2px solid #e2e8f0; border-radius: 14px;
-        background: white; cursor: pointer; transition: all 0.2s; color: #1e293b; font-weight: 500;
-    }
+    .option-btn { padding: 0.9rem; font-size: 0.95rem; border: 2px solid #e2e8f0; border-radius: 14px; background: white; cursor: pointer; transition: all 0.2s; color: #1e293b; font-weight: 500; }
     .option-btn:hover { border-color: #6366f1; background: #eef2ff; }
     .option-btn.correct { background: #10b981; color: white; border-color: #10b981; }
     .option-btn.wrong { background: #ef4444; color: white; border-color: #ef4444; }
@@ -55,10 +57,16 @@
     
     .message-box { text-align: center; padding: 3rem; background: white; border-radius: 20px; border: 1px solid #f1f5f9; }
     
+    .stage-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .stage-flashcard { background: #eef2ff; color: #6366f1; }
+    .stage-test { background: #fef3c7; color: #d97706; }
+    
     @media (max-width: 500px) {
         .options { grid-template-columns: 1fr; }
         .exercise-term { font-size: 2rem; }
         .exercise-box { padding: 1.2rem; }
+        .flashcard { height: 200px; }
+        .flashcard-term { font-size: 2rem; }
     }
 </style>
 
@@ -72,28 +80,41 @@
     <h1>{{ deck.name }}</h1>
     
     <div class="stats-bar">
-        <span>Всего: {{ stats.total_cards }}</span>
-        <span>Освоено: {{ stats.mastered }}</span>
-        <span>В процессе: {{ stats.learning }}</span>
+        {% if stage == 'flashcard' %}<span class="stage-badge stage-flashcard">📖 Карточки</span>{% endif %}
+        {% if stage == 'test' %}<span class="stage-badge stage-test">🧪 Тесты</span>{% endif %}
     </div>
     
-    {% if no_cards %}
-    <div class="message-box">
-        <h2>Обучение завершено</h2>
-        <p style="color: #94a3b8; margin: 1rem 0;">Все карточки на сегодня пройдены.</p>
-        <a href="{% url 'cards:deck_detail' deck.pk %}" class="btn btn-outline">К колоде</a>
-        <a href="{% url 'cards:study_results' deck.pk %}" class="btn btn-primary">Результаты</a>
-    </div>
+        {% if no_cards %}
+    <meta http-equiv="refresh" content="0; url={% url 'cards:study_results' deck.pk %}">
     {% else %}
     <div class="progress-row">
-        <span>Карточка <span id="current-card-num">{{ current_number|default:1 }}</span>/{{ total_due }}</span>
-    </div>
-    <div class="progress-bar">
-    <div class="progress-fill" id="progress-fill"></div>
+    <span>Карточка <span id="current-card-num">{{ current_number|default:1 }}</span>/{{ total_due }}</span>
+    <span style="font-size:0.7rem; color:#94a3b8;">(debug: total={{ total_due }}, stage={{ stage }})</span>
 </div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
     
     <div class="exercise-box">
-        {% if exercise.type == 'multiple_choice' %}
+        {% if exercise.type == 'flashcard' %}
+            <!-- НОВЫЙ ТИП: FLASHCARD -->
+            <h2>Нажмите на карточку, чтобы увидеть перевод</h2>
+            <div class="flashcard-container" id="flashcard-container">
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-front">
+                        <span class="flashcard-term">{{ exercise.term }}</span>
+                    </div>
+                    <div class="flashcard-back">
+                        <span class="flashcard-def">{{ exercise.definition }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flashcard-actions">
+                <button class="flashcard-know-btn" onclick="submitFlashcardAnswer(true)">✅ Знаю</button>
+                <button class="flashcard-dont-know-btn" onclick="submitFlashcardAnswer(false)">❌ Не знаю</button>
+            </div>
+            
+        {% elif exercise.type == 'multiple_choice' %}
             <h2>{{ exercise.question }}</h2>
             <div class="exercise-term">{{ exercise.term }}</div>
             <div class="options">
@@ -163,10 +184,10 @@
     
     <form id="answer-form" method="post">
         {% csrf_token %}
-        <input type="hidden" name="card_id" id="card-id-input" value="{{ card.pk }}">
+        <input type="hidden" name="card_id" id="card-id-input" value="{{ card.pk|default:0 }}">
         <input type="hidden" name="is_correct" id="is-correct-input" value="false">
     </form>
     {% endif %}
 </div>
-<script src="{% static 'cards/js/study_session.js' %}?v=2"></script>
+<script src="{% static 'cards/js/study_session.js' %}?v=3"></script>
 {% endblock %}
