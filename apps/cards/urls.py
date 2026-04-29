@@ -29,6 +29,8 @@ urlpatterns = [
     path("api/cards/<int:card_pk>/generate-context/", api_views.GenerateContextAPIView.as_view(), name="api_generate_context"),
     path("api/decks/<int:deck_pk>/stats/", api_views.DeckStatsAPIView.as_view(), name="api_deck_stats"),
     path("decks/<int:deck_pk>/study/retry/", views.RetryStrugglingView.as_view(), name="retry_struggling"),
+    path("decks/<int:deck_pk>/study/retry/complete/", views.RetryCompleteView.as_view(), name="retry_complete"),
+    path("decks/<int:deck_pk>/study/retry/results/", views.RetryResultsView.as_view(), name="retry_results"),
     
     
 ]

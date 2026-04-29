@@ -84,7 +84,7 @@
         {% if stage == 'test' %}<span class="stage-badge stage-test">🧪 Тесты</span>{% endif %}
     </div>
     
-        {% if no_cards %}
+                {% if no_cards %}
     <meta http-equiv="refresh" content="0; url={% url 'cards:study_results' deck.pk %}">
     {% else %}
     <div class="progress-row">
