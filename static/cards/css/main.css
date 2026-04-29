@@ -69,6 +69,40 @@ h3 { color: var(--text); font-size: 1rem; font-weight: 600; margin-bottom: 0.6re
 .btn-large { padding: 0.7rem 1.8rem; font-size: 0.95rem; }
 .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 8px; }
 
+/* Лайк */
+.like-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.8rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+.like-btn.liked {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #ef4444;
+}
+.like-btn .likes-count {
+    font-weight: 600;
+}
+
+.like-btn:active {
+    background: white;  /* ← сбрасываем active на телефоне */
+}
+.like-btn.liked:active {
+    background: #fef2f2;
+}
+
+
 /* ---------- ФОРМЫ ---------- */
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; color: var(--text); font-size: 0.9rem; }
@@ -188,3 +222,4 @@ h3 { color: var(--text); font-size: 1rem; font-weight: 600; margin-bottom: 0.6re
     .stats-grid { grid-template-columns: 1fr; }
     h1 { font-size: 1.2rem; }
 }
+

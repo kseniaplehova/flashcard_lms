@@ -1,3 +1,5 @@
+from django.utils import timezone
+from datetime import timedelta
 from typing import Any
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
@@ -6,6 +8,7 @@ from django.http import HttpResponse
 from apps.cards.models import Deck, Flashcard, UserCardProgress
 from apps.cards.services.srs_engine import SRSEngine
 from apps.cards.services.llm_generator import LLMGeneratorService
+
 
 
 def is_card_mastered(progress: UserCardProgress) -> bool:
@@ -29,6 +32,17 @@ class StudySessionView(LoginRequiredMixin, TemplateView):
         self.session_key_test_results = f"study_session_{deck.pk}_test_results"
 
         if request.method == 'GET' and self.session_key_stage not in request.session:
+            user = request.user
+            today = timezone.now().date()
+            if user.last_activity_date != today:
+                yesterday = today - timedelta(days=1)
+                if user.last_activity_date == yesterday:
+                    user.current_streak += 1
+                else:
+                    user.current_streak = 1
+                user.last_activity_date = today
+                user.save(update_fields=['current_streak', 'last_activity_date'])
+            
             all_cards = Flashcard.objects.filter(deck=deck, is_active=True)
             total_count = all_cards.count()
 

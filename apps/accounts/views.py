@@ -30,23 +30,15 @@ class RegisterView(CreateView):
 
 
 class ProfileView(LoginRequiredMixin, TemplateView):
-    """
-    Страница профиля пользователя со статистикой.
-    SQL: sql/queries.sql, строки 9, 40-54
-    """
     template_name = "accounts/profile.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # Колоды пользователя
-        # SQL: SELECT COUNT(*) FROM decks WHERE owner_id = ?
         context['total_decks'] = Deck.objects.filter(owner=user).count()
         context['public_decks'] = Deck.objects.filter(owner=user, visibility='public').count()
         
-        # Статистика обучения
-        # SQL: SELECT SUM(cards_mastered), SUM(cards_learning), SUM(cards_struggling) FROM deck_progress WHERE user_id = ?
         progress = DeckProgress.objects.filter(user=user).aggregate(
             total_mastered=Sum('cards_mastered'),
             total_learning=Sum('cards_learning'),
@@ -56,25 +48,19 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         context['cards_learning'] = progress['total_learning'] or 0
         context['cards_struggling'] = progress['total_struggling'] or 0
         
-        # Общее количество попыток
-        # SQL: SELECT SUM(total_attempts) FROM user_card_progress WHERE user_id = ?
-        context['total_attempts'] = UserCardProgress.objects.filter(
-            user=user
-        ).aggregate(total=Sum('total_attempts'))['total'] or 0
+        # Стрик (дни подряд)
+        context['streak'] = user.current_streak
         
-        # Последние колоды
-        # SQL: SELECT * FROM decks WHERE owner_id = ? ORDER BY updated_at DESC LIMIT 5
         context['recent_decks'] = Deck.objects.filter(owner=user).order_by('-updated_at')[:5]
         
         # Прогресс по дням (последние 7 дней)
-        # SQL: sql/queries.sql, строка 50
         today = timezone.now().date()
         daily_progress = []
         for i in range(7):
             date = today - timedelta(days=i)
-            count = UserCardProgress.objects.filter(
+            count = UserActivity.objects.filter(
                 user=user,
-                last_reviewed_at__date=date
+                created_at__date=date
             ).count()
             daily_progress.append({'date': date.strftime('%d.%m'), 'count': count})
         context['daily_progress'] = list(reversed(daily_progress))

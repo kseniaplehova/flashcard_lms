@@ -5,12 +5,13 @@ from django.db import models
 class User(AbstractUser):
     """
     Кастомная модель пользователя.
-    Таблица: users (см. sql/init.sql, строка 2)
     """
     is_teacher = models.BooleanField(
         default=False,
         help_text='Может создавать публичные колоды и управлять пользователями'
     )
+    current_streak = models.PositiveIntegerField(default=0, verbose_name='Дней подряд')
+    last_activity_date = models.DateField(null=True, blank=True, verbose_name='Последняя активность')
     
     class Meta:
         db_table = 'users'
