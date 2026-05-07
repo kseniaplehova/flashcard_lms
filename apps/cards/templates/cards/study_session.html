@@ -14,12 +14,12 @@
     .progress-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; }
     
     .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; margin-bottom: 1rem; overflow: hidden; }
-    .progress-fill { height: 100%; background: #6366f1; border-radius: 4px; transition: width 0.3s ease; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a78bfa); border-radius: 4px; transition: width 0.3s ease; }
     
-    .exercise-box { background: white; border-radius: 20px; padding: 2rem; border: 1px solid #f1f5f9; margin: 1rem 0; text-align: center; }
+    .exercise-box { background: white; border-radius: 20px; padding: 2rem; border: 1px solid #f1f5f9; margin: 1rem 0; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
     .exercise-box h2 { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; }
     .exercise-term { font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 1rem 0; }
-    .exercise-sentence { font-size: 1.1rem; color: #64748b; background: #f8fafc; padding: 1rem; border-radius: 12px; margin: 1rem 0; }
+    .exercise-sentence { font-size: 1.1rem; color: #475569; background: #f8fafc; padding: 1rem; border-radius: 12px; margin: 1rem 0; border: 1px solid #e2e8f0; }
     .exercise-words { font-size: 0.9rem; color: #6366f1; background: #eef2ff; padding: 0.8rem; border-radius: 10px; margin: 1rem 0; line-height: 1.6; }
     
     /* Стили для flashcard */
@@ -27,39 +27,39 @@
     .flashcard { position: relative; width: 100%; height: 250px; cursor: pointer; transition: transform 0.6s; transform-style: preserve-3d; }
     .flashcard.flipped { transform: rotateY(180deg); }
     .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    .flashcard-front { background: #6366f1; color: white; }
-    .flashcard-back { background: #10b981; color: white; transform: rotateY(180deg); }
+    .flashcard-front { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+    .flashcard-back { background: linear-gradient(135deg, #10b981, #34d399); color: white; transform: rotateY(180deg); }
     .flashcard-def { font-size: 1.5rem; color: white; }
     .flashcard-term { font-size: 2.5rem; }
     
     .flashcard-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
     .flashcard-know-btn, .flashcard-dont-know-btn { padding: 0.7rem 2rem; border-radius: 12px; font-size: 1rem; cursor: pointer; border: none; font-weight: 600; transition: all 0.2s; }
-    .flashcard-know-btn { background: #10b981; color: white; }
-    .flashcard-know-btn:hover { background: #059669; }
-    .flashcard-dont-know-btn { background: #ef4444; color: white; }
-    .flashcard-dont-know-btn:hover { background: #dc2626; }
+    .flashcard-know-btn { background: linear-gradient(135deg, #10b981, #34d399); color: white; }
+    .flashcard-know-btn:hover { background: linear-gradient(135deg, #059669, #10b981); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+    .flashcard-dont-know-btn { background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; }
+    .flashcard-dont-know-btn:hover { background: linear-gradient(135deg, #e11d48, #f43f5e); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(244,63,94,0.2); }
     
     .options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-top: 1.5rem; }
     .option-btn { padding: 0.9rem; font-size: 0.95rem; border: 2px solid #e2e8f0; border-radius: 14px; background: white; cursor: pointer; transition: all 0.2s; color: #1e293b; font-weight: 500; }
-    .option-btn:hover { border-color: #6366f1; background: #eef2ff; }
-    .option-btn.correct { background: #10b981; color: white; border-color: #10b981; }
-    .option-btn.wrong { background: #ef4444; color: white; border-color: #ef4444; }
+    .option-btn:hover { border-color: #818cf8; background: #eef2ff; transform: translateY(-1px); }
+    .option-btn.correct { background: linear-gradient(135deg, #10b981, #34d399); color: white; border-color: #10b981; }
+    .option-btn.wrong { background: linear-gradient(135deg, #f43f5e, #fb7185); color: white; border-color: #f43f5e; }
     .option-btn:disabled { opacity: 0.5; }
     
-    #answer-input { width: 100%; padding: 0.9rem; font-size: 1rem; border: 2px solid #e2e8f0; border-radius: 14px; margin: 1rem 0; }
-    #answer-input:focus { outline: none; border-color: #6366f1; }
+    #answer-input { width: 100%; padding: 0.9rem; font-size: 1rem; border: 2px solid #e2e8f0; border-radius: 14px; margin: 1rem 0; transition: border-color 0.2s; }
+    #answer-input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,0.1); }
     
     .hint-text { font-size: 0.8rem; color: #94a3b8; margin-top: 0.3rem; }
     
     .feedback { padding: 0.8rem; border-radius: 12px; margin-top: 1rem; font-weight: 500; }
-    .feedback.ok { background: #ecfdf5; color: #10b981; }
-    .feedback.err { background: #fef2f2; color: #ef4444; }
+    .feedback.ok { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .feedback.err { background: #fef2f2; color: #e11d48; border: 1px solid #fecaca; }
     
     .message-box { text-align: center; padding: 3rem; background: white; border-radius: 20px; border: 1px solid #f1f5f9; }
     
     .stage-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .stage-flashcard { background: #eef2ff; color: #6366f1; }
-    .stage-test { background: #fef3c7; color: #d97706; }
+    .stage-flashcard { background: linear-gradient(135deg, #eef2ff, #e0e7ff); color: #4f46e5; }
+    .stage-test { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; }
     
     @media (max-width: 500px) {
         .options { grid-template-columns: 1fr; }
@@ -84,20 +84,18 @@
         {% if stage == 'test' %}<span class="stage-badge stage-test">🧪 Тесты</span>{% endif %}
     </div>
     
-                {% if no_cards %}
+    {% if no_cards %}
     <meta http-equiv="refresh" content="0; url={% url 'cards:study_results' deck.pk %}">
     {% else %}
     <div class="progress-row">
-    <span>Карточка <span id="current-card-num">{{ current_number|default:1 }}</span>/{{ total_due }}</span>
-    <span style="font-size:0.7rem; color:#94a3b8;">(debug: total={{ total_due }}, stage={{ stage }})</span>
-</div>
+        <span>Карточка <span id="current-card-num">{{ current_number|default:1 }}</span>/{{ total_due }}</span>
+    </div>
     <div class="progress-bar">
         <div class="progress-fill" id="progress-fill"></div>
     </div>
     
     <div class="exercise-box">
         {% if exercise.type == 'flashcard' %}
-            <!-- НОВЫЙ ТИП: FLASHCARD -->
             <h2>Нажмите на карточку, чтобы увидеть перевод</h2>
             <div class="flashcard-container" id="flashcard-container">
                 <div class="flashcard" id="flashcard" onclick="flipCard()">
